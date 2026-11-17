@@ -99,3 +99,92 @@ export const CHANNEL_LABELS: Record<ContactChannel, string> = {
   sms: "پیامک",
   email: "ایمیل",
 };
+
+// -- sales --------------------------------------------------------------------
+
+export type DealStatus = "open" | "won" | "lost";
+
+export type Stage = { id: string; name: string; sort_order: number; is_active: boolean };
+
+export type DealLimited = {
+  access: "limited";
+  id: string;
+  title: string;
+  customer: { id: string; full_name: string };
+  stage: Ref;
+  status: DealStatus;
+  owner: UserRef;
+  last_activity_at: string | null;
+  created_at: string;
+  closed_at: string | null;
+};
+
+export type DealFull = Omit<DealLimited, "access"> & {
+  access: "full";
+  updated_at: string;
+  version: number;
+  description: string | null;
+  organization: Ref | null;
+  amount: number | null;
+  currency: string;
+  expected_close_date: string | null;
+  contract_amount: number | null;
+  contract_date: string | null;
+  lost_reason: string | null;
+  archived_at: string | null;
+  paid_amount: number;
+  outstanding_amount: number | null;
+};
+
+export type Deal = DealFull | DealLimited;
+
+export type BoardColumn = {
+  stage: Stage;
+  count: number;
+  total_amount: number;
+  deals: Deal[];
+  truncated: boolean;
+};
+
+export type Board = {
+  columns: BoardColumn[];
+  outcome: {
+    closed_from: string;
+    won_count: number;
+    won_total: number;
+    lost_count: number;
+    deals: Deal[];
+    truncated: boolean;
+  };
+};
+
+export type DealHistoryEntry = {
+  id: string;
+  from_stage: Ref | null;
+  to_stage: Ref;
+  from_status: DealStatus | null;
+  to_status: DealStatus;
+  changed_by: UserRef;
+  reason: string | null;
+  changed_at: string;
+};
+
+export type Payment = {
+  id: string;
+  kind: "payment" | "refund";
+  amount: number;
+  currency: string;
+  paid_on: string;
+  reference: string | null;
+  note: string | null;
+  recorded_by: UserRef;
+  created_at: string;
+  voided_at: string | null;
+  void_reason: string | null;
+};
+
+export const DEAL_STATUS_LABELS: Record<DealStatus, string> = {
+  open: "باز",
+  won: "فروش انجام شد",
+  lost: "به نتیجه نرسید",
+};

@@ -1,7 +1,7 @@
 import uuid
 from collections.abc import Sequence
 from datetime import UTC, date, datetime, time, timedelta
-from typing import Annotated, Literal, cast
+from typing import Annotated, Literal, Protocol, cast
 from zoneinfo import ZoneInfo
 
 from fastapi import Depends, HTTPException, status
@@ -142,10 +142,20 @@ def resolve_owner(db: Session, scope: AccessScope, owner_id: uuid.UUID | None) -
 # -- ownership & archive ---------------------------------------------------
 
 
+class OwnedRecord(Protocol):
+    """Any owned, archivable record: lead, customer or deal."""
+
+    id: uuid.UUID
+    owner_id: uuid.UUID
+    owner: User
+    archived_at: datetime | None
+    archived_by_id: uuid.UUID | None
+
+
 def change_owner(
     db: Session,
     scope: AccessScope,
-    record: Customer | Lead,
+    record: OwnedRecord,
     entity_type: str,
     new_owner_id: uuid.UUID,
     reason: str | None,
@@ -170,14 +180,14 @@ def change_owner(
     record.owner = new_owner
 
 
-def archive(scope: AccessScope, record: Customer | Lead) -> None:
+def archive(scope: AccessScope, record: OwnedRecord) -> None:
     scope.require_manage(record.owner_id)
     if record.archived_at is None:
         record.archived_at = datetime.now(UTC)
         record.archived_by_id = scope.user.id
 
 
-def restore(scope: AccessScope, record: Customer | Lead) -> None:
+def restore(scope: AccessScope, record: OwnedRecord) -> None:
     scope.require_manage(record.owner_id)
     record.archived_at = None
     record.archived_by_id = None

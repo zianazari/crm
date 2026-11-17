@@ -6,51 +6,14 @@ reps see only the current status of records they do not own.
 
 import threading
 import uuid
-from dataclasses import dataclass
 from typing import Any
 
-import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import func, select
 
 from app.db.session import SessionLocal
 from app.modules.crm.models import Customer, LeadSource, OwnershipHistory
-from app.modules.identity.models import Role, Team, User
-from tests.conftest import login_as
-
-
-@dataclass
-class Org:
-    admin: User
-    manager: User
-    rep1: User
-    rep2: User
-    other_manager: User
-    other_rep: User
-
-
-def _user(name: str, mobile: str, role: Role, team: Team | None = None) -> User:
-    return User(full_name=name, mobile=mobile, role=role, team=team)
-
-
-@pytest.fixture
-def org() -> Org:
-    with SessionLocal() as db:
-        team_a, team_b = Team(name="فروش الف"), Team(name="فروش ب")
-        users = Org(
-            admin=_user("ادمین", "+989100000001", Role.ADMIN),
-            manager=_user("مدیر الف", "+989100000002", Role.SALES_MANAGER, team_a),
-            rep1=_user("کارشناس ۱", "+989100000003", Role.SALES_REP, team_a),
-            rep2=_user("کارشناس ۲", "+989100000004", Role.SALES_REP, team_a),
-            other_manager=_user("مدیر ب", "+989100000005", Role.SALES_MANAGER, team_b),
-            other_rep=_user("کارشناس ب", "+989100000006", Role.SALES_REP, team_b),
-        )
-        db.add_all([team_a, team_b, *users.__dict__.values()])
-        db.flush()
-        team_a.manager_id = users.manager.id
-        team_b.manager_id = users.other_manager.id
-        db.commit()
-        return users
+from tests.conftest import Org, login_as
 
 
 def source_id() -> str:

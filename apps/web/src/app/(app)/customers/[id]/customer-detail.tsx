@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import {
   Archive,
@@ -13,6 +14,7 @@ import {
   PhoneCall,
   Plus,
   Tag,
+  Tags,
   UserRound,
   X,
 } from "lucide-react";
@@ -22,6 +24,8 @@ import { toast } from "sonner";
 import { AssignDialog } from "@/components/crm/assign-dialog";
 import { InfoRow, Owner } from "@/components/crm/bits";
 import { CustomerFormDialog } from "@/components/crm/customer-form-dialog";
+import { DealFormDialog } from "@/components/crm/deal-form-dialog";
+import { DealStatusBadge } from "@/components/crm/deal-status";
 import { Breadcrumb, DetailError, DetailSkeleton, LimitedRecord } from "@/components/crm/detail-parts";
 import { OrganizationPicker } from "@/components/crm/organization-picker";
 import { Badge } from "@/components/ui/badge";
@@ -29,8 +33,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ApiError, apiFetch } from "@/lib/api";
-import { formatMobile } from "@/lib/format";
-import { canManage, keys, useCustomer, useMe } from "@/lib/queries";
+import { formatMobile, formatToman } from "@/lib/format";
+import { canManage, keys, useCustomer, useDeals, useMe } from "@/lib/queries";
 import { CHANNEL_LABELS, type CustomerFull, type Ref } from "@/lib/types";
 
 export function CustomerDetail({ id }: { id: string }) {
@@ -137,15 +141,7 @@ function FullCustomer({ customer }: { customer: CustomerFull }) {
               <CardContent className="whitespace-pre-line text-sm leading-7">{customer.description}</CardContent>
             </Card>
           ) : null}
-          <Card>
-            <CardHeader>
-              <CardTitle>فروش‌ها و سابقه پیگیری‌ها</CardTitle>
-            </CardHeader>
-            <CardContent className="text-sm text-muted-foreground">
-              فروش‌ها، فعالیت‌ها و یادداشت‌های این مشتری پس از ساخت بخش‌های «فروش‌ها» و «فعالیت‌ها» اینجا نمایش
-              داده می‌شوند.
-            </CardContent>
-          </Card>
+          <CustomerDeals customer={customer} />
         </div>
 
         <Card className="order-first h-fit lg:order-last">
@@ -281,6 +277,60 @@ function OrganizationsCard({ customer, editable }: { customer: CustomerFull; edi
             </div>
           </div>
         ) : null}
+      </CardContent>
+    </Card>
+  );
+}
+
+/** Deals of this customer. Others' deals appear in limited form only (spec 4.3:
+ * opening one deal does not reveal the details of the customer's other deals). */
+function CustomerDeals({ customer }: { customer: CustomerFull }) {
+  const { data } = useDeals({ customer_id: customer.id, page_size: 50 });
+  const deals = data?.items ?? [];
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <CardTitle className="flex items-center gap-2">
+          <Tags className="size-5" aria-hidden />
+          فروش‌ها
+        </CardTitle>
+        {!customer.archived_at ? (
+          <DealFormDialog
+            customer={customer}
+            trigger={
+              <Button size="sm" variant="outline">
+                <Plus aria-hidden />
+                فروش جدید
+              </Button>
+            }
+          />
+        ) : null}
+      </CardHeader>
+      <CardContent>
+        {deals.length === 0 ? (
+          <p className="text-sm text-muted-foreground">هنوز فروشی برای این مشتری ثبت نشده است.</p>
+        ) : (
+          <ul className="divide-y">
+            {deals.map((deal) => {
+              const amount =
+                deal.access === "full" ? (deal.status === "won" ? deal.contract_amount : deal.amount) : null;
+              return (
+                <li key={deal.id}>
+                  <Link
+                    href={`/deals/${deal.id}`}
+                    className="flex flex-wrap items-center justify-between gap-2 py-2.5 text-sm hover:text-primary"
+                  >
+                    <span className="font-medium">{deal.title}</span>
+                    <span className="flex items-center gap-3">
+                      {amount !== null ? <span>{formatToman(amount)}</span> : null}
+                      <DealStatusBadge deal={deal} />
+                    </span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        )}
       </CardContent>
     </Card>
   );
