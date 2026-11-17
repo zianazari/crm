@@ -1,0 +1,48 @@
+from typing import Annotated
+
+from fastapi import Depends, FastAPI, Response, status
+from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session
+
+from app.core.config import get_settings
+from app.db.session import get_db
+
+
+def create_app() -> FastAPI:
+    settings = get_settings()
+    app = FastAPI(
+        title="CRM API",
+        version="0.1.0",
+        # Interactive docs only outside production.
+        docs_url=None if settings.environment == "production" else "/docs",
+        redoc_url=None,
+    )
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=settings.cors_origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
+    @app.get("/health/live", tags=["health"])
+    def live() -> dict[str, str]:
+        """The process is up. Does not touch dependencies."""
+        return {"status": "ok"}
+
+    @app.get("/health/ready", tags=["health"])
+    def ready(response: Response, db: Annotated[Session, Depends(get_db)]) -> dict[str, str]:
+        """The API can serve traffic: the database answers."""
+        try:
+            db.execute(text("SELECT 1"))
+        except SQLAlchemyError:
+            response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+            return {"status": "unavailable", "database": "down"}
+        return {"status": "ok", "database": "up"}
+
+    return app
+
+
+app = create_app()
