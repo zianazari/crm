@@ -18,7 +18,7 @@
 پیش‌نیازها: Docker، Node.js 24 با pnpm و [uv](https://docs.astral.sh/uv/).
 
 ```bash
-# سرویس‌های محلی (Postgres روی پورت 55432)
+# سرویس‌های محلی (Postgres روی پورت 5432)
 docker compose up -d --wait
 
 # API: http://localhost:8000/docs
@@ -26,6 +26,7 @@ cd apps/api
 cp .env.example .env
 uv sync
 uv run alembic upgrade head
+uv run python -m app.cli create-user --name "نام شما" --mobile 09xxxxxxxxx --role admin
 uv run uvicorn app.main:app --reload
 
 # وب: http://localhost:3000
@@ -33,6 +34,8 @@ cd apps/web
 pnpm install
 pnpm dev
 ```
+
+برای ورود در محیط توسعه، شماره یا ایمیل کاربر ساخته‌شده را در http://localhost:3000/login وارد کنید؛ کد پنج‌رقمی فقط در لاگ API (خط `DEV OTP`) چاپ می‌شود. این ارسال‌کننده در سایر محیط‌ها غیرفعال است.
 
 اگر پورتی روی سیستم شما اشغال است، `CRM_POSTGRES_PORT`، `CRM_REDIS_PORT` یا `CRM_RABBITMQ_PORT` را هنگام اجرای Docker Compose تغییر دهید و `CRM_DATABASE_URL` را مطابق آن تنظیم کنید.
 

@@ -1,13 +1,17 @@
 from typing import Annotated
 
-from fastapi import Depends, FastAPI, Response, status
+from fastapi import Depends, FastAPI, Request, Response, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from redis.exceptions import RedisError
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
 from app.db.session import get_db
+from app.modules.auth.router import router as auth_router
+from app.modules.auth.sender import SenderNotConfiguredError
 
 
 def create_app() -> FastAPI:
@@ -26,6 +30,20 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    # Fail closed: if Redis (OTP, rate limits, session revocation) is unavailable,
+    # authentication is refused rather than skipped (spec section 8).
+    @app.exception_handler(RedisError)
+    def redis_unavailable(_: Request, __: RedisError) -> JSONResponse:
+        return JSONResponse(
+            {"detail": "سرویس موقتاً در دسترس نیست. کمی بعد دوباره تلاش کنید."}, status_code=503
+        )
+
+    @app.exception_handler(SenderNotConfiguredError)
+    def sender_missing(_: Request, __: SenderNotConfiguredError) -> JSONResponse:
+        return JSONResponse({"detail": "ارسال کد ورود هنوز پیکربندی نشده است."}, status_code=503)
+
+    app.include_router(auth_router)
 
     @app.get("/health/live", tags=["health"])
     def live() -> dict[str, str]:
