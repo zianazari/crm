@@ -21,12 +21,8 @@ const ROLE_LABELS: Record<CurrentUser["role"], string> = {
 };
 
 function initials(name: string): string {
-  return name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0])
-    .join("‌");
+  // Persian letters join when adjacent, so a single letter reads more cleanly.
+  return name.trim().charAt(0);
 }
 
 export function UserMenu() {
