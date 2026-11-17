@@ -1,1 +1,6 @@
 .DS_Store
+
+# Design and reference images stay local only
+docs/images/**/*.png
+docs/images/**/*.jpg
+docs/images/references/
