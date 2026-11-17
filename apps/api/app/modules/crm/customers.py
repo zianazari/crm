@@ -4,7 +4,7 @@ from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import JSONResponse
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.modules.auth.deps import DbDep, require_csrf
@@ -39,6 +39,7 @@ from app.modules.crm.schemas import (
     OrganizationLinkIn,
     Page,
 )
+from app.modules.sales.models import Deal, DealStatus
 
 router = APIRouter(prefix="/customers", tags=["customers"], dependencies=[Depends(require_csrf)])
 
@@ -228,8 +229,22 @@ def assign_customer(
 
 @router.post("/{customer_id}/archive")
 def archive_customer(customer_id: uuid.UUID, db: DbDep, scope: ScopeDep) -> CustomerOut:
-    # Spec 5: archiving is also blocked by open deals; that check arrives with deals.
     customer = load(db, customer_id, for_update=True)
+    # Spec 5: a customer with open deals cannot be archived; close or move them first.
+    open_deals = db.scalar(
+        select(func.count())
+        .select_from(Deal)
+        .where(
+            Deal.customer_id == customer.id,
+            Deal.status == DealStatus.OPEN,
+            Deal.archived_at.is_(None),
+        )
+    )
+    if open_deals:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            detail="این مشتری فروش باز دارد؛ ابتدا فروش‌ها را ببندید یا به مشتری دیگری منتقل کنید.",
+        )
     archive(scope, customer)
     db.commit()
     return CustomerOut.model_validate(customer)

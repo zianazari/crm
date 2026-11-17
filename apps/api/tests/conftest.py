@@ -19,6 +19,7 @@ os.environ["CRM_REDIS_URL"] = os.environ.get("CRM_TEST_REDIS_URL", "redis://loca
 os.environ["CRM_COOKIE_SECURE"] = "false"  # TestClient talks plain http
 
 import uuid  # noqa: E402
+from dataclasses import dataclass  # noqa: E402
 
 import pytest  # noqa: E402
 from alembic import command  # noqa: E402
@@ -31,7 +32,7 @@ from app.core.redis import get_redis  # noqa: E402
 from app.db.session import SessionLocal  # noqa: E402
 from app.main import app  # noqa: E402
 from app.modules.auth.sessions import SessionService  # noqa: E402
-from app.modules.identity.models import User  # noqa: E402
+from app.modules.identity.models import Role, Team, User  # noqa: E402
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -66,3 +67,37 @@ def login_as(user_id: uuid.UUID) -> TestClient:
     client.cookies.set("crm_csrf", tokens.csrf_token)
     client.headers["X-CSRF-Token"] = tokens.csrf_token
     return client
+
+
+@dataclass
+class Org:
+    admin: User
+    manager: User
+    rep1: User
+    rep2: User
+    other_manager: User
+    other_rep: User
+
+
+def _user(name: str, mobile: str, role: Role, team: Team | None = None) -> User:
+    return User(full_name=name, mobile=mobile, role=role, team=team)
+
+
+@pytest.fixture
+def org() -> Org:
+    with SessionLocal() as db:
+        team_a, team_b = Team(name="فروش الف"), Team(name="فروش ب")
+        users = Org(
+            admin=_user("ادمین", "+989100000001", Role.ADMIN),
+            manager=_user("مدیر الف", "+989100000002", Role.SALES_MANAGER, team_a),
+            rep1=_user("کارشناس ۱", "+989100000003", Role.SALES_REP, team_a),
+            rep2=_user("کارشناس ۲", "+989100000004", Role.SALES_REP, team_a),
+            other_manager=_user("مدیر ب", "+989100000005", Role.SALES_MANAGER, team_b),
+            other_rep=_user("کارشناس ب", "+989100000006", Role.SALES_REP, team_b),
+        )
+        db.add_all([team_a, team_b, *users.__dict__.values()])
+        db.flush()
+        team_a.manager_id = users.manager.id
+        team_b.manager_id = users.other_manager.id
+        db.commit()
+        return users
