@@ -12,6 +12,7 @@ from app.core.config import get_settings
 from app.db.session import get_db
 from app.modules.auth.router import router as auth_router
 from app.modules.auth.sender import SenderNotConfiguredError
+from app.modules.crm import customers, leads, organizations, reference
 
 
 def create_app() -> FastAPI:
@@ -44,6 +45,8 @@ def create_app() -> FastAPI:
         return JSONResponse({"detail": "ارسال کد ورود هنوز پیکربندی نشده است."}, status_code=503)
 
     app.include_router(auth_router)
+    for module in (leads, customers, organizations, reference):
+        app.include_router(module.router)
 
     @app.get("/health/live", tags=["health"])
     def live() -> dict[str, str]:

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Suspense } from "react";
 import { usePathname } from "next/navigation";
 
 import { cn } from "@/lib/utils";
@@ -41,10 +42,9 @@ function NavLink({ item, active }: { item: NavItem; active: boolean }) {
   );
 }
 
-/** Navigation links shared by the desktop sidebar and the mobile menu. */
-export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
-  const pathname = usePathname();
-  const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
+function NavList({ pathname, onNavigate }: { pathname: string | null; onNavigate?: () => void }) {
+  const isActive = (href: string) =>
+    pathname !== null && (pathname === href || pathname.startsWith(`${href}/`));
 
   return (
     <div className="flex flex-1 flex-col gap-6" onClick={onNavigate}>
@@ -59,6 +59,21 @@ export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
         ))}
       </nav>
     </div>
+  );
+}
+
+function ActiveNavList({ onNavigate }: { onNavigate?: () => void }) {
+  return <NavList pathname={usePathname()} onNavigate={onNavigate} />;
+}
+
+/** Navigation links shared by the desktop sidebar and the mobile menu.
+ * On dynamic routes the pathname is only known at request time, so the links
+ * prerender without a highlight and pick it up once the path resolves. */
+export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
+  return (
+    <Suspense fallback={<NavList pathname={null} onNavigate={onNavigate} />}>
+      <ActiveNavList onNavigate={onNavigate} />
+    </Suspense>
   );
 }
 

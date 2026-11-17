@@ -1,10 +1,13 @@
 /** Browser client for the CRM API (served under /api on the web origin). */
 
+import type { DuplicateMatch } from "@/lib/types";
+
 export class ApiError extends Error {
   constructor(
     public readonly status: number,
     message: string,
     public readonly retryAfter?: number,
+    public readonly body?: unknown,
   ) {
     super(message);
   }
@@ -63,14 +66,18 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}, retry = 
   }
   if (!res.ok) {
     let message = GENERIC_ERROR;
+    let body: unknown;
     try {
-      const body = (await res.json()) as { detail?: unknown };
-      if (typeof body.detail === "string") message = body.detail;
+      body = await res.json();
+      const detail = (body as { detail?: unknown }).detail;
+      if (typeof detail === "string") message = detail;
+      // FastAPI validation errors: show the first message.
+      else if (Array.isArray(detail) && typeof detail[0]?.msg === "string") message = "اطلاعات واردشده معتبر نیست.";
     } catch {
       // keep the generic message
     }
     const retryAfter = Number(res.headers.get("Retry-After")) || undefined;
-    throw new ApiError(res.status, message, retryAfter);
+    throw new ApiError(res.status, message, retryAfter, body);
   }
   return (res.status === 204 ? undefined : await res.json()) as T;
 }
@@ -94,4 +101,13 @@ export async function fetchMe(): Promise<CurrentUser> {
     }
     throw err;
   }
+}
+
+/** Matches returned with a 409 when a mobile or email already exists. */
+export function duplicateMatches(error: unknown): DuplicateMatch[] | null {
+  if (error instanceof ApiError && error.status === 409) {
+    const matches = (error.body as { matches?: unknown } | undefined)?.matches;
+    if (Array.isArray(matches)) return matches as DuplicateMatch[];
+  }
+  return null;
 }
