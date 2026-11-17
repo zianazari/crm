@@ -4,6 +4,8 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { usePathname } from "next/navigation";
 
+import { formatNumber } from "@/lib/format";
+import { useWorkload } from "@/lib/queries";
 import { cn } from "@/lib/utils";
 import { mainNav, secondaryNav, type NavItem } from "@/lib/navigation";
 
@@ -24,7 +26,7 @@ export function Logo() {
   );
 }
 
-function NavLink({ item, active }: { item: NavItem; active: boolean }) {
+function NavLink({ item, active, badge }: { item: NavItem; active: boolean; badge?: number }) {
   const Icon = item.icon;
   return (
     <Link
@@ -38,6 +40,12 @@ function NavLink({ item, active }: { item: NavItem; active: boolean }) {
     >
       <Icon className="size-5 shrink-0" aria-hidden />
       <span>{item.label}</span>
+      {badge ? (
+        <span className="ms-auto rounded-full bg-primary px-1.5 text-xs font-medium text-primary-foreground">
+          {formatNumber(badge)}
+          <span className="sr-only"> کار امروز و معوق</span>
+        </span>
+      ) : null}
     </Link>
   );
 }
@@ -45,12 +53,19 @@ function NavLink({ item, active }: { item: NavItem; active: boolean }) {
 function NavList({ pathname, onNavigate }: { pathname: string | null; onNavigate?: () => void }) {
   const isActive = (href: string) =>
     pathname !== null && (pathname === href || pathname.startsWith(`${href}/`));
+  const { data: workload } = useWorkload();
+  const due = workload ? workload.open_count + workload.overdue_count : 0;
 
   return (
     <div className="flex flex-1 flex-col gap-6" onClick={onNavigate}>
       <nav aria-label="منوی اصلی" className="flex flex-1 flex-col gap-1 px-3">
         {mainNav.map((item) => (
-          <NavLink key={item.href} item={item} active={isActive(item.href)} />
+          <NavLink
+            key={item.href}
+            item={item}
+            active={isActive(item.href)}
+            badge={item.href === "/activities" ? due : undefined}
+          />
         ))}
       </nav>
       <nav aria-label="مدیریت" className="flex flex-col gap-1 px-3">

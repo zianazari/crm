@@ -9,6 +9,7 @@ from sqlalchemy import Select, case, func, or_, select
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
+from app.modules.activities.service import next_activities
 from app.modules.auth.deps import DbDep, require_csrf
 from app.modules.crm.access import AccessScope
 from app.modules.crm.common import (
@@ -81,12 +82,16 @@ def full_view(deal: Deal, paid: int) -> DealOut:
 def views(db: Session, scope: AccessScope, deals: list[Deal]) -> list[DealOut | DealLimited]:
     full_ids = [d.id for d in deals if scope.has_full_access(d.owner_id)]
     totals = payment_totals(db, full_ids)
-    return [
-        full_view(d, totals.get(d.id, 0))
-        if scope.has_full_access(d.owner_id)
-        else DealLimited.model_validate(d)
-        for d in deals
-    ]
+    upcoming = next_activities(db, full_ids)
+    result: list[DealOut | DealLimited] = []
+    for d in deals:
+        if scope.has_full_access(d.owner_id):
+            full = full_view(d, totals.get(d.id, 0))
+            full.next_activity = upcoming.get(d.id)
+            result.append(full)
+        else:
+            result.append(DealLimited.model_validate(d))
+    return result
 
 
 def view(db: Session, scope: AccessScope, deal: Deal) -> DealOut | DealLimited:

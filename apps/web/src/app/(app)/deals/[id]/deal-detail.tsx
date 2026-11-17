@@ -9,7 +9,6 @@ import {
   CalendarDays,
   CircleCheck,
   CircleX,
-  History,
   Pencil,
   RotateCcw,
   Undo2,
@@ -26,15 +25,16 @@ import { DealFormDialog } from "@/components/crm/deal-form-dialog";
 import { DealStatusBadge } from "@/components/crm/deal-status";
 import { Breadcrumb, DetailError, DetailSkeleton, LimitedRecord } from "@/components/crm/detail-parts";
 import { PaymentDialog } from "@/components/crm/payment-dialog";
+import { PlannedActivities, Timeline } from "@/components/crm/record-activity";
 import { ReasonDialog } from "@/components/crm/reason-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ApiError, apiFetch } from "@/lib/api";
 import { useMoveDeal } from "@/lib/deal-actions";
-import { formatDate, formatDateTime, formatToman } from "@/lib/format";
+import { formatDate, formatToman } from "@/lib/format";
 import { formatIsoDate } from "@/lib/jalali";
-import { canManage, keys, useDeal, useDealHistory, useDealPayments, useMe, useStages } from "@/lib/queries";
+import { canManage, keys, useDeal, useDealPayments, useMe, useStages } from "@/lib/queries";
 import { DEAL_STATUS_LABELS, type DealFull, type Stage } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -162,8 +162,9 @@ function FullDeal({ deal }: { deal: DealFull }) {
 
       <div className="grid gap-6 lg:grid-cols-[1fr_22rem]">
         <div className="space-y-6">
+          <PlannedActivities subject={{ deal: { id: deal.id, name: deal.title } }} filter={{ deal_id: deal.id }} />
+          <Timeline subject={{ deal_id: deal.id }} />
           <MoneyCard deal={deal} manager={manager} />
-          <HistoryCard dealId={deal.id} />
         </div>
 
         <Card className="order-first h-fit lg:order-last">
@@ -396,47 +397,4 @@ function Stat({ label, value, emphasis }: { label: string; value: string; emphas
       <dd className={cn("mt-1 font-semibold", emphasis && "text-warning-foreground")}>{value}</dd>
     </div>
   );
-}
-
-function HistoryCard({ dealId }: { dealId: string }) {
-  const { data: history = [] } = useDealHistory(dealId, true);
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <History className="size-5" aria-hidden />
-          تاریخچه مراحل
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <ol className="space-y-4 border-s ps-4">
-          {history.map((h) => (
-            <li key={h.id} className="relative text-sm">
-              <span className="absolute -start-[1.32rem] top-1.5 size-2.5 rounded-full bg-primary" aria-hidden />
-              <p className="font-medium">{describe(h)}</p>
-              <p className="text-xs text-muted-foreground">
-                {h.changed_by.full_name} · {formatDateTime(h.changed_at)}
-              </p>
-              {h.reason ? <p className="mt-1 text-muted-foreground">دلیل: {h.reason}</p> : null}
-            </li>
-          ))}
-        </ol>
-        <p className="mt-4 text-xs text-muted-foreground">
-          تماس‌ها، جلسه‌ها و یادداشت‌ها پس از ساخت بخش «فعالیت‌ها» در خط زمانی همین پرونده نمایش داده می‌شوند.
-        </p>
-      </CardContent>
-    </Card>
-  );
-}
-
-function describe(h: {
-  from_status: DealFull["status"] | null;
-  to_status: DealFull["status"];
-  from_stage: { name: string } | null;
-  to_stage: { name: string };
-}): string {
-  if (h.from_status === null) return `فروش در مرحله «${h.to_stage.name}» ثبت شد`;
-  if (h.from_status === "open" && h.to_status !== "open") return `نتیجه: ${DEAL_STATUS_LABELS[h.to_status]}`;
-  if (h.from_status !== "open" && h.to_status === "open") return `بازگشایی در مرحله «${h.to_stage.name}»`;
-  return `انتقال از «${h.from_stage?.name ?? "—"}» به «${h.to_stage.name}»`;
 }

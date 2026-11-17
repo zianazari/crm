@@ -28,6 +28,7 @@ import { DealFormDialog } from "@/components/crm/deal-form-dialog";
 import { DealStatusBadge } from "@/components/crm/deal-status";
 import { Breadcrumb, DetailError, DetailSkeleton, LimitedRecord } from "@/components/crm/detail-parts";
 import { OrganizationPicker } from "@/components/crm/organization-picker";
+import { PlannedActivities, Timeline } from "@/components/crm/record-activity";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -141,7 +142,12 @@ function FullCustomer({ customer }: { customer: CustomerFull }) {
               <CardContent className="whitespace-pre-line text-sm leading-7">{customer.description}</CardContent>
             </Card>
           ) : null}
+          <PlannedActivities
+            subject={{ customer: { id: customer.id, name: customer.full_name } }}
+            filter={{ customer_id: customer.id }}
+          />
           <CustomerDeals customer={customer} />
+          <Timeline subject={{ customer_id: customer.id }} />
         </div>
 
         <Card className="order-first h-fit lg:order-last">

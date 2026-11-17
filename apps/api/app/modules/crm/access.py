@@ -59,6 +59,12 @@ class AccessScope:
             return user.id in self.team_member_ids
         return user.id == self.user.id
 
+    def owner_ids(self) -> set[uuid.UUID] | None:
+        """Owners whose records this user sees in full; None means everyone (admin)."""
+        if self.is_admin:
+            return None
+        return {self.user.id} | (set(self.team_member_ids) if self.is_manager else set())
+
     def full_access_filter(
         self, owner_column: InstrumentedAttribute[uuid.UUID]
     ) -> ColumnElement[bool]:

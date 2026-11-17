@@ -23,6 +23,7 @@ import { InfoRow, LeadStatusBadge, Owner } from "@/components/crm/bits";
 import { ConvertDialog } from "@/components/crm/convert-dialog";
 import { Breadcrumb, DetailError, DetailSkeleton, LimitedRecord } from "@/components/crm/detail-parts";
 import { LeadFormDialog } from "@/components/crm/lead-form-dialog";
+import { PlannedActivities, Timeline } from "@/components/crm/record-activity";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -162,14 +163,10 @@ function FullLead({ lead }: { lead: LeadFull }) {
               <CardContent className="whitespace-pre-line text-sm leading-7">{lead.description}</CardContent>
             </Card>
           ) : null}
-          <Card>
-            <CardHeader>
-              <CardTitle>سابقه پیگیری‌ها</CardTitle>
-            </CardHeader>
-            <CardContent className="text-sm text-muted-foreground">
-              تماس‌ها، یادداشت‌ها و فعالیت‌ها پس از ساخت بخش «فعالیت‌ها» اینجا نمایش داده می‌شوند.
-            </CardContent>
-          </Card>
+          {editable ? (
+            <PlannedActivities subject={{ lead: { id: lead.id, name: lead.full_name } }} filter={{ lead_id: lead.id }} />
+          ) : null}
+          <Timeline subject={{ lead_id: lead.id }} />
         </div>
 
         <Card className="order-first h-fit lg:order-last">
