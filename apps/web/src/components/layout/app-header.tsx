@@ -2,6 +2,7 @@ import { Bell, Search } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { MobileNav } from "@/components/layout/mobile-nav";
+import { UserMenu } from "@/components/layout/user-menu";
 
 export function AppHeader() {
   return (
@@ -27,6 +28,7 @@ export function AppHeader() {
         <Button variant="ghost" size="icon" aria-label="اعلان‌ها">
           <Bell className="size-5" />
         </Button>
+        <UserMenu />
       </div>
     </header>
   );
