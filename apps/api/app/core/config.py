@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="CRM_", env_file=".env", extra="ignore")
 
     environment: Literal["development", "test", "staging", "production"] = "development"
-    database_url: PostgresDsn = PostgresDsn("postgresql+psycopg://crm:crm@localhost:55432/crm")
+    database_url: PostgresDsn = PostgresDsn("postgresql+psycopg://crm:crm@localhost:5432/crm")
     redis_url: RedisDsn = RedisDsn("redis://localhost:6379/0")
     rabbitmq_url: str = "amqp://crm:crm@localhost:5672/"
     cors_origins: list[str] = ["http://localhost:3000"]

@@ -18,7 +18,7 @@
 پیش‌نیازها: Docker، Node.js 24 با pnpm و [uv](https://docs.astral.sh/uv/).
 
 ```bash
-# سرویس‌های محلی (Postgres روی پورت 55432)
+# سرویس‌های محلی (Postgres روی پورت 5432)
 docker compose up -d --wait
 
 # API: http://localhost:8000/docs
