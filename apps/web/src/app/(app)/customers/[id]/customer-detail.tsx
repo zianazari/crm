@@ -23,6 +23,7 @@ import { toast } from "sonner";
 
 import { AssignDialog } from "@/components/crm/assign-dialog";
 import { InfoRow, Owner } from "@/components/crm/bits";
+import { consentText } from "@/components/crm/consent-fields";
 import { CustomerFormDialog } from "@/components/crm/customer-form-dialog";
 import { DealFormDialog } from "@/components/crm/deal-form-dialog";
 import { DealStatusBadge } from "@/components/crm/deal-status";
@@ -172,6 +173,9 @@ function FullCustomer({ customer }: { customer: CustomerFull }) {
             </InfoRow>
             <InfoRow icon={<MessageSquare className="size-4" />} label="کانال ترجیحی">
               {customer.preferred_channel ? CHANNEL_LABELS[customer.preferred_channel] : "—"}
+            </InfoRow>
+            <InfoRow icon={<MessageSquare className="size-4" />} label="اجازه دریافت پیام">
+              {consentText(customer)}
             </InfoRow>
             <InfoRow icon={<Link2 className="size-4" />} label="منبع">
               {customer.source?.name ?? "—"}

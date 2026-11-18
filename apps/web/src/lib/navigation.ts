@@ -7,6 +7,7 @@ import {
   Settings,
   UserPlus,
   Users,
+  Workflow,
   type LucideIcon,
 } from "lucide-react";
 
@@ -14,12 +15,14 @@ export type NavItem = {
   href: string;
   label: string;
   icon: LucideIcon;
+  /** Shown only to sales managers and admins (the API enforces the same). */
+  managersOnly?: boolean;
 };
 
 /**
  * Main navigation for release 1 (core sales).
- * Labels follow section 6 of the product spec. Campaigns, automation and
- * tickets are added here when release 2 starts.
+ * Labels follow section 6 of the product spec. Campaigns and tickets are added
+ * here when they are built.
  */
 export const mainNav: NavItem[] = [
   { href: "/overview", label: "نمای کلی", icon: House },
@@ -29,6 +32,7 @@ export const mainNav: NavItem[] = [
   { href: "/activities", label: "فعالیت‌ها", icon: CircleCheckBig },
   { href: "/calendar", label: "تقویم", icon: Calendar },
   { href: "/reports", label: "گزارش‌ها", icon: ChartColumn },
+  { href: "/automations", label: "اتوماسیون", icon: Workflow, managersOnly: true },
 ];
 
 export const secondaryNav: NavItem[] = [

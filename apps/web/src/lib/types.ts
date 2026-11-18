@@ -28,6 +28,9 @@ export type LeadFull = Omit<LeadLimited, "access"> & {
   acquisition: Record<string, unknown> | null;
   tags: Ref[];
   disqualify_reason: string | null;
+  sms_consent: boolean;
+  email_consent: boolean;
+  consent_updated_at: string | null;
   converted_customer_id: string | null;
   converted_at: string | null;
   archived_at: string | null;
@@ -55,6 +58,9 @@ export type CustomerFull = Omit<CustomerLimited, "access"> & {
   source: Ref | null;
   tags: Ref[];
   organizations: { organization: Ref; job_title: string | null }[];
+  sms_consent: boolean;
+  email_consent: boolean;
+  consent_updated_at: string | null;
   archived_at: string | null;
 };
 
