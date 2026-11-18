@@ -43,5 +43,22 @@ services:
       timeout: 5s
       retries: 10
 
+  # Catches every email sent in development: http://localhost:8025
+  mailpit:
+    image: axllent/mailpit:v1.21
+    ports:
+      - "127.0.0.1:${CRM_SMTP_PORT:-1025}:1025"
+      - "127.0.0.1:${CRM_MAILPIT_UI_PORT:-8025}:8025"
+
+  # Simulated SMS provider (tools/sms-sink): http://localhost:8030
+  sms-sink:
+    build: ./tools/sms-sink
+    environment:
+      SMS_SINK_WEBHOOK_SECRET: dev-only-sms-webhook-secret
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "127.0.0.1:${CRM_SMS_SINK_PORT:-8030}:8030"
+
 volumes:
   postgres-data:

@@ -20,7 +20,7 @@ from sqlalchemy.orm import Session
 
 from app.core.config import Settings
 from app.core.normalize import normalize_email, normalize_mobile, normalize_otp_code
-from app.modules.auth.sender import Channel, OtpSender
+from app.modules.auth.sender import Channel, OtpContext, OtpSender
 from app.modules.identity.models import User
 
 logger = logging.getLogger("crm.auth.otp")
@@ -117,7 +117,12 @@ class OtpService:
         code = f"{secrets.randbelow(100_000):05d}"
         self._store(challenge.challenge_id, user.id, channel, destination, code)
         try:
-            self.sender.send(channel, destination, code)
+            self.sender.send(
+                channel,
+                destination,
+                code,
+                OtpContext(challenge.challenge_id, user.id, self.settings.otp_ttl_seconds),
+            )
         except Exception:
             # Keep the response identical; the failure is visible in logs and monitoring.
             logger.exception("OTP delivery failed for user %s", user.id)

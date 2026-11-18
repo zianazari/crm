@@ -26,7 +26,8 @@
 | `apps/web` | Next.js، shadcn/ui، Tailwind CSS، فونت وزیرمتن، تاریخ شمسی |
 | `apps/api` | FastAPI، SQLAlchemy، Alembic |
 | `apps/api/app/modules` | `auth`، `identity` (کاربران و تیم‌ها)، `audit`، `crm` (مشتری و سرنخ)، `sales` (فروش و پرداخت)، `activities`، `reports` |
-| `docker-compose.yml` | PostgreSQL، Redis و RabbitMQ برای توسعه محلی |
+| `docker-compose.yml` | PostgreSQL، Redis، RabbitMQ و سرویس‌های آزمایشی Mailpit و sms-sink برای توسعه محلی |
+| `tools/sms-sink` | شبیه‌ساز سرویس‌دهنده پیامک برای توسعه و آزمون؛ در تولید استفاده نمی‌شود |
 | `docs/` | سند نیازمندی‌ها؛ تصاویر طراحی و مرجع فقط محلی نگهداری می‌شوند و وارد Git نمی‌شوند |
 
 ## اجرای محلی
@@ -44,6 +45,8 @@ uv sync
 uv run alembic upgrade head
 uv run python -m app.cli create-user --name "نام شما" --mobile 09xxxxxxxxx --role admin
 uv run uvicorn app.main:app --reload
+# در ترمینال دیگر: ارسال پیامک و ایمیل از صف
+uv run python -m app.worker
 
 # وب: http://localhost:3000
 cd apps/web
@@ -53,7 +56,19 @@ pnpm dev
 
 ثبت‌نام عمومی وجود ندارد. اولین ادمین با دستور `create-user` ساخته می‌شود (نقش‌ها: `admin`، `sales_manager`، `sales_rep`)؛ بقیه کاربران و تیم‌ها از صفحه «تنظیمات» مدیریت می‌شوند.
 
-برای ورود در محیط توسعه، شماره یا ایمیل کاربر را در http://localhost:3000/login وارد کنید؛ کد پنج‌رقمی فقط در لاگ API (خط `DEV OTP`) چاپ می‌شود. این ارسال‌کننده در سایر محیط‌ها غیرفعال است. اگر در آزمون‌های مکرر به سقف درخواست کد رسیدید، شمارنده‌های محلی را پاک کنید:
+### پیامک و ایمیل در محیط توسعه
+
+هیچ پیامک یا ایمیلی واقعاً ارسال نمی‌شود. با `CRM_MESSAGING_MODE=queue` پیام‌ها از Outbox و RabbitMQ به Worker می‌رسند و به سرویس‌های آزمایشی تحویل داده می‌شوند:
+
+- پیامک: صندوق آزمایشی http://localhost:8030 (sms-sink)
+- ایمیل: Mailpit در http://localhost:8025
+- وضعیت هر پیام: تنظیمات ← پیام‌های ارسالی
+
+برای آزمودن خطاها، شماره‌هایی با این پایان رفتار خاص دارند: `9404` گزارش تحویل ناموفق، `9503` قطعی موقت سرویس (تلاش مجدد و سپس ناموفق)، `9408` بی‌پاسخ ماندن سرویس (وضعیت «نامشخص»، بدون ارسال دوباره).
+
+اگر Worker را اجرا نمی‌کنید، `CRM_MESSAGING_MODE=console` کد ورود را فقط در لاگ API (خط `DEV OTP`) چاپ می‌کند؛ این حالت فقط در محیط توسعه مجاز است.
+
+برای ورود در محیط توسعه، شماره یا ایمیل کاربر را در http://localhost:3000/login وارد کنید و کد را از صندوق پیامک، Mailpit یا لاگ بردارید. اگر در آزمون‌های مکرر به سقف درخواست کد رسیدید، شمارنده‌های محلی را پاک کنید:
 
 ```bash
 docker compose exec redis sh -c "redis-cli --scan --pattern 'otp:*' | xargs -r redis-cli del"
