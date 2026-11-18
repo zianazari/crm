@@ -26,7 +26,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { ApiError, apiFetch } from "@/lib/api";
 import { formatDateTime, formatNumber } from "@/lib/format";
 import { keys, useSettings } from "@/lib/queries";
-import type { AdminUser, AuditEntry, LeadSource, Page, Stage, Team } from "@/lib/types";
+import { TEAM_KIND_LABELS, type AdminUser, type AuditEntry, type LeadSource, type Page, type Stage, type Team, type TeamKind } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 function useAction() {
@@ -139,6 +139,7 @@ export function TeamsTab({ admin }: { admin: boolean }) {
                     />
                   ) : null}
                 </div>
+                {t.kind === "finance" ? <Badge variant="secondary">تیم مالی</Badge> : null}
                 <p className="text-sm text-muted-foreground">سرپرست: {t.manager?.full_name ?? "تعیین نشده"}</p>
                 <p className="text-sm text-muted-foreground">{formatNumber(t.member_count)} عضو فعال</p>
                 {!t.is_active ? <Badge variant="outline">غیرفعال</Badge> : null}
@@ -155,15 +156,29 @@ function TeamDialog({ team, managers, trigger }: { team?: Team; managers: AdminU
   const act = useAction();
   const [managerId, setManagerId] = useState(team?.manager?.id ?? "");
   const [active, setActive] = useState(team?.is_active ?? true);
+  const [kind, setKind] = useState<TeamKind>(team?.kind ?? "sales");
   return (
     <NameDialog
       title={team ? "ویرایش تیم" : "تیم جدید"}
       initial={team?.name}
       trigger={trigger}
       onSave={(name) =>
-        act(team ? `/teams/${team.id}` : "/teams", team ? "PATCH" : "POST", { name, manager_id: managerId || null, is_active: active }, "تیم ذخیره شد.")
+        act(team ? `/teams/${team.id}` : "/teams", team ? "PATCH" : "POST", { name, kind, manager_id: managerId || null, is_active: active }, "تیم ذخیره شد.")
       }
     >
+      <Field
+        label="نوع تیم"
+        htmlFor="team-kind"
+        hint="اعضای تیم مالی فقط فعالیت‌های خود و صف کار تیم را می‌بینند؛ اتوماسیون می‌تواند کار را به صف این تیم بفرستد."
+      >
+        <NativeSelect id="team-kind" className="w-full" value={kind} onChange={(e) => setKind(e.target.value as TeamKind)}>
+          {Object.entries(TEAM_KIND_LABELS).map(([value, label]) => (
+            <NativeSelectOption key={value} value={value}>
+              {label}
+            </NativeSelectOption>
+          ))}
+        </NativeSelect>
+      </Field>
       <Field label="سرپرست تیم" htmlFor="team-manager" hint="فقط کاربران با نقش مدیر فروش.">
         <NativeSelect id="team-manager" className="w-full" value={managerId} onChange={(e) => setManagerId(e.target.value)}>
           <NativeSelectOption value="">بدون سرپرست</NativeSelectOption>

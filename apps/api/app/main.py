@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 from app.core.config import get_settings
 from app.db.session import get_db
 from app.modules.activities import router as activities
-from app.modules.activities import timeline
+from app.modules.activities import team_tasks, timeline
 from app.modules.audit import router as audit_router
 from app.modules.auth.router import router as auth_router
 from app.modules.auth.sender import SenderNotConfiguredError
@@ -63,6 +63,7 @@ def create_app() -> FastAPI:
         stages,
         activities,
         timeline,
+        team_tasks,
         reports,
         identity_router,
         audit_router,

@@ -20,6 +20,7 @@ from app.modules.crm.common import (
     change_owner,
     day_bounds,
     paginate,
+    require_sales_access,
     resolve_owner,
     restore,
     unprocessable,
@@ -48,7 +49,11 @@ from app.modules.sales.schemas import (
     WinIn,
 )
 
-router = APIRouter(prefix="/deals", tags=["deals"], dependencies=[Depends(require_csrf)])
+router = APIRouter(
+    prefix="/deals",
+    tags=["deals"],
+    dependencies=[Depends(require_csrf), Depends(require_sales_access)],
+)
 
 _CONFLICT: dict[int | str, dict[str, Any]] = {
     status.HTTP_409_CONFLICT: {"description": "Changed by someone else; body has the current deal"}

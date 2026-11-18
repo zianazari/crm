@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   ArrowDown,
   ArrowUp,
@@ -29,7 +30,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatNumber, formatToman } from "@/lib/format";
 import { bucketize, buckets, lastMonths, periodLabel, presetPeriod, previousPeriod, type Period } from "@/lib/period";
-import { useActivities, useReport, type ReportSummary } from "@/lib/queries";
+import { useActivities, useMe, useReport, type ReportSummary } from "@/lib/queries";
 import type { ActivityBrief, UserRef } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -42,7 +43,18 @@ type FollowUp = {
   next_activity: ActivityBrief | null;
 };
 
+/** Finance team members have no sales overview; their home is their activities. */
 export function OverviewView({ today }: { today: string }) {
+  const router = useRouter();
+  const { data: me } = useMe();
+  useEffect(() => {
+    if (me?.finance_member) router.replace("/activities");
+  }, [me, router]);
+  if (!me || me.finance_member) return <Skeleton className="h-96" />;
+  return <SalesOverview today={today} />;
+}
+
+function SalesOverview({ today }: { today: string }) {
   const [period, setPeriod] = useState<Period>(() => presetPeriod("this_month", today));
   const previous = previousPeriod(period);
   const range = { date_from: period.from, date_to: period.to };

@@ -188,9 +188,11 @@ def test_templates_and_versions(org: Org) -> None:
     for key in keys[:-1]:
         rule = from_template(manager, key)
         assert rule["problems"] == [], (key, rule["problems"])
-    # The finance template needs the finance user chosen before it can be published.
+    # Without a finance team, the finance template asks for the queue's team.
     finance = from_template(manager, "finance_follow_up")
-    assert [p["message"] for p in finance["problems"]] == ["کاربر مسئول را انتخاب کنید."]
+    assert [p["message"] for p in finance["problems"]] == [
+        "تیمی را که کار به صف آن می‌رود انتخاب کنید."
+    ]
 
     proposal = from_template(manager, "proposal_follow_up")
     condition = proposal["draft"]["nodes"][1]["config"]

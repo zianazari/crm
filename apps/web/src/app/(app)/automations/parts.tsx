@@ -1,6 +1,9 @@
 "use client";
 
+import { useQuery } from "@tanstack/react-query";
+
 import { Badge } from "@/components/ui/badge";
+import { apiFetch } from "@/lib/api";
 import {
   CONDITION_FIELD_LABELS,
   DELAY_UNIT_LABELS,
@@ -74,6 +77,15 @@ export function useConditionOptions(field: string): { value: string; label: stri
   }
 }
 
+/** Finance teams an automation can queue work for. */
+export function useQueueTeams() {
+  return useQuery({
+    queryKey: ["team-tasks", "targets"],
+    queryFn: () => apiFetch<{ id: string; name: string }[]>("/team-tasks/targets"),
+    staleTime: 60_000,
+  });
+}
+
 export function useUserName() {
   const { data: users = [] } = useAssignableUsers();
   return (id: unknown) => users.find((u) => u.id === id)?.full_name ?? "کاربر انتخاب‌نشده";
@@ -94,6 +106,7 @@ function readable(text: string): string {
 export function BlockSummary({ kind, config }: { kind: BlockKind; config: BlockConfig }) {
   const options = useConditionOptions(kind === "condition" ? String(config.field ?? "") : "");
   const userName = useUserName();
+  const { data: teams = [] } = useQueueTeams();
   let text = "";
   switch (kind) {
     case "trigger": {
@@ -120,7 +133,12 @@ export function BlockSummary({ kind, config }: { kind: BlockKind; config: BlockC
     }
     case "create_activity": {
       const type = ACTIVITY_TYPE_LABELS[config.activity_type as ActivityType] ?? "فعالیت";
-      const who = config.assignee === "user" ? userName(config.user_id) : "مسئول پرونده";
+      const who =
+        config.assignee === "user"
+          ? userName(config.user_id)
+          : config.assignee === "team"
+            ? `صف تیم «${teams.find((t) => t.id === config.team_id)?.name ?? "؟"}»`
+            : "مسئول پرونده";
       const due = Number(config.due_in_days ?? 0);
       text = `${type} «${String(config.title ?? "")}» برای ${who}، ${due ? `${formatNumber(due)} روز بعد` : "همان روز"}`;
       break;

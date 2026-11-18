@@ -16,6 +16,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { formatNumber } from "@/lib/format";
 import { canManage, useActivities, useAssignableUsers, useMe, useWorkload } from "@/lib/queries";
 import { ACTIVITY_TYPE_LABELS, type ActivityType } from "@/lib/types";
+import { useHydrated } from "@/lib/use-hydrated";
 import { cn } from "@/lib/utils";
 
 const TABS = [
@@ -139,7 +140,8 @@ export function ActivitiesView() {
 
 function WorkloadCard({ ownerId }: { ownerId?: string }) {
   const { data } = useWorkload(ownerId);
-  if (!data) return <Skeleton className="h-20" />;
+  const hydrated = useHydrated();
+  if (!data || !hydrated) return <Skeleton className="h-20" />;
   const hours = Math.floor(data.timed_minutes / 60);
   const minutes = data.timed_minutes % 60;
   return (

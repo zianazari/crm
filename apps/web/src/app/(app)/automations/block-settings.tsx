@@ -20,7 +20,7 @@ import {
 import { toAsciiDigits } from "@/lib/format";
 import { useAssignableUsers } from "@/lib/queries";
 import { ACTIVITY_TYPE_LABELS } from "@/lib/types";
-import { RECIPIENTS, useConditionOptions } from "./parts";
+import { RECIPIENTS, useConditionOptions, useQueueTeams } from "./parts";
 
 type Props = {
   nodeId: string;
@@ -69,6 +69,19 @@ function UserSelect({ id, value, onChange }: { id: string; value: string; onChan
       onChange={onChange}
       placeholder="انتخاب کاربر"
       options={users.map((u) => [u.id, u.full_name])}
+    />
+  );
+}
+
+function TeamSelect({ id, value, onChange }: { id: string; value: string; onChange: (v: string) => void }) {
+  const { data: teams = [] } = useQueueTeams();
+  return (
+    <Select
+      id={id}
+      value={value}
+      onChange={onChange}
+      placeholder={teams.length ? "انتخاب تیم" : "تیم مالی فعالی تعریف نشده است"}
+      options={teams.map((t) => [t.id, t.name])}
     />
   );
 }
@@ -163,16 +176,33 @@ export function BlockSettings({ nodeId, kind, config, subject, onChange }: Props
             <Select
               id={id("assignee")}
               value={str("assignee")}
-              onChange={(assignee) => set({ assignee, ...(assignee === "user" ? {} : { user_id: undefined }) })}
+              onChange={(assignee) =>
+                set({
+                  assignee,
+                  ...(assignee === "user" ? {} : { user_id: undefined }),
+                  ...(assignee === "team" ? {} : { team_id: undefined }),
+                })
+              }
               options={[
                 ["record_owner", "مسئول پرونده"],
-                ["user", "کاربر مشخص (مثلاً مسئول مالی)"],
+                ["user", "کاربر مشخص"],
+                ["team", "صف تیم مالی (یکی از اعضا برمی‌دارد)"],
               ]}
             />
           </Field>
           {config.assignee === "user" ? (
             <Field label="کاربر" htmlFor={id("user")} required>
               <UserSelect id={id("user")} value={str("user_id")} onChange={(user_id) => set({ user_id })} />
+            </Field>
+          ) : null}
+          {config.assignee === "team" ? (
+            <Field
+              label="تیم"
+              htmlFor={id("team")}
+              required
+              hint="کار در صف تیم می‌ماند تا عضوی آن را بردارد یا مدیر تیم واگذار کند. اگر تیم غیرفعال یا بی‌عضو باشد، اجرا متوقف و به شما اعلام می‌شود."
+            >
+              <TeamSelect id={id("team")} value={str("team_id")} onChange={(team_id) => set({ team_id })} />
             </Field>
           ) : null}
         </>

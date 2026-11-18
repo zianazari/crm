@@ -32,7 +32,7 @@ from app.modules.crm.access import AccessScope
 from app.modules.crm.common import ScopeDep, unprocessable
 from app.modules.crm.models import Customer, Lead, LeadStatus, OwnershipHistory
 from app.modules.crm.schemas import UserRef
-from app.modules.identity.models import Role, Team, User
+from app.modules.identity.models import Role, Team, TeamKind, User
 from app.modules.notifications.models import NotificationKind
 from app.modules.notifications.service import fa, notify
 from app.modules.sales.models import Deal, DealStatus
@@ -105,6 +105,7 @@ class TeamOut(BaseModel):
 
     id: uuid.UUID
     name: str
+    kind: TeamKind
     is_active: bool
     manager: UserRef | None = None
     member_count: int = 0
@@ -112,6 +113,7 @@ class TeamOut(BaseModel):
 
 class TeamIn(BaseModel):
     name: str = Field(min_length=2, max_length=120)
+    kind: TeamKind = TeamKind.SALES
     manager_id: uuid.UUID | None = None
     is_active: bool = True
 
@@ -481,7 +483,10 @@ def create_team(body: TeamIn, request: Request, db: DbDep, scope: ScopeDep) -> T
         raise HTTPException(status.HTTP_409_CONFLICT, detail="تیمی با این نام وجود دارد.")
     manager = _check_manager(db, body.manager_id, None)
     team = Team(
-        name=body.name.strip(), is_active=body.is_active, manager_id=manager.id if manager else None
+        name=body.name.strip(),
+        kind=body.kind,
+        is_active=body.is_active,
+        manager_id=manager.id if manager else None,
     )
     db.add(team)
     db.flush()
@@ -514,12 +519,14 @@ def update_team(
             "name": body.name.strip() if body.name.strip() != team.name else None,
             "manager_id": str(body.manager_id) if body.manager_id != team.manager_id else None,
             "is_active": body.is_active if body.is_active != team.is_active else None,
+            "kind": body.kind.value if body.kind != team.kind else None,
         }.items()
         if v is not None
     }
     team.name = body.name.strip()
     team.manager_id = manager.id if manager else None
     team.is_active = body.is_active
+    team.kind = body.kind
     if manager is not None and manager.team_id != team.id:
         manager.team_id = team.id
     if changes:

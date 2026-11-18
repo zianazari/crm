@@ -8,6 +8,10 @@
 Everyone else's records are visible in "limited" form only: name, status, owner and
 last activity — no contact details, notes or history, and no edits.
 
+Members of an operational (finance) team are reps without the sales views: they see
+their own activities, their team's queue and what those tasks need about the deal —
+not the lists of leads, customers, deals or reports (spec section 5).
+
 These checks are enforced in the API for every read, list, search and write; the UI
 only mirrors them.
 """
@@ -19,7 +23,7 @@ from fastapi import HTTPException, status
 from sqlalchemy import ColumnElement, false, select, true
 from sqlalchemy.orm import InstrumentedAttribute, Session
 
-from app.modules.identity.models import Role, Team, User
+from app.modules.identity.models import Role, Team, TeamKind, User
 
 FORBIDDEN = HTTPException(
     status.HTTP_403_FORBIDDEN,
@@ -32,6 +36,8 @@ class AccessScope:
     user: User
     # For a manager: ids of active members of their team (including themselves).
     team_member_ids: frozenset[uuid.UUID] = field(default_factory=frozenset)
+    # A rep in a finance team (see the module docstring).
+    is_finance: bool = False
 
     @property
     def is_admin(self) -> bool:
@@ -83,7 +89,16 @@ class AccessScope:
             raise FORBIDDEN
 
 
+FINANCE_ONLY = HTTPException(
+    status.HTTP_403_FORBIDDEN,
+    detail="اعضای تیم مالی فقط فعالیت‌های خود و صف کار تیم را می‌بینند.",
+)
+
+
 def build_scope(db: Session, user: User) -> AccessScope:
+    if user.role is Role.SALES_REP:
+        kind = db.scalar(select(Team.kind).where(Team.id == user.team_id)) if user.team_id else None
+        return AccessScope(user=user, is_finance=kind is TeamKind.FINANCE)
     if user.role is not Role.SALES_MANAGER:
         return AccessScope(user=user)
     team_id = db.scalar(select(Team.id).where(Team.manager_id == user.id, Team.is_active.is_(True)))

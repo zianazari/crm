@@ -89,6 +89,10 @@ export type CurrentUser = {
   team_id: string | null;
   mobile: string | null;
   email: string | null;
+  /** A rep in a finance team: activities and the team queue only (spec section 5). */
+  finance_member: boolean;
+  /** Team queues this user may open. */
+  queue_team_ids: string[];
 };
 
 /** Current user, refreshing the access token once if it has expired. */

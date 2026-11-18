@@ -15,6 +15,7 @@ from app.modules.crm.common import (
     clean_email,
     clean_mobile,
     find_duplicates,
+    require_sales_access,
 )
 from app.modules.crm.models import LeadSource, Tag
 from app.modules.crm.schemas import DuplicateMatch, LeadSourceIn, LeadSourceOut, Ref, TagIn, UserRef
@@ -103,7 +104,7 @@ def assignable_users(db: DbDep, scope: ScopeDep) -> list[UserRef]:
     return [UserRef.model_validate(u) for u in db.scalars(query)]
 
 
-@router.get("/duplicates")
+@router.get("/duplicates", dependencies=[Depends(require_sales_access)])
 def check_duplicates(
     db: DbDep,
     scope: ScopeDep,

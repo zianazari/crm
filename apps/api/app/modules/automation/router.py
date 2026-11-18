@@ -26,7 +26,7 @@ from app.modules.automation.templates import TEMPLATES, build_template
 from app.modules.crm.access import AccessScope
 from app.modules.crm.common import ScopeDep, paginate
 from app.modules.crm.schemas import Page, UserRef
-from app.modules.identity.models import User
+from app.modules.identity.models import Team, TeamKind, User
 
 router = APIRouter(prefix="/automations", tags=["automation"], dependencies=[Depends(require_csrf)])
 
@@ -187,6 +187,17 @@ def _check_action_users(
     """The server re-checks what each action may do, independently of the builder."""
     problems = []
     for step in definition["steps"]:
+        team_id = step["config"].get("team_id")
+        if step["kind"] == "create_activity" and step["config"].get("assignee") == "team":
+            team = db.get(Team, uuid.UUID(str(team_id)))
+            if team is None or team.kind is not TeamKind.FINANCE or not team.is_active:
+                problems.append(
+                    ProblemOut(
+                        node_id=step["node_id"],
+                        message="فقط تیم‌های عملیاتی (مالی) فعال صف کار دارند.",
+                    )
+                )
+            continue
         user_id = step["config"].get("user_id")
         if step["kind"] in {"create_activity", "notify"} and user_id:
             user = db.get(User, uuid.UUID(str(user_id)))
@@ -409,6 +420,19 @@ def dry_run(rule_id: uuid.UUID, body: TestIn, db: DbDep, scope: ScopeDep) -> Tes
             seconds = int(config["amount"]) * DELAY_UNITS[str(config["unit"])]
             steps.append(
                 TestStep(node_id=node, kind=k, outcome="wait", detail=f"{seconds // 60} دقیقه صبر")
+            )
+        elif k == "create_activity" and config.get("assignee") == "team":
+            team = db.get(Team, uuid.UUID(str(config["team_id"])))
+            steps.append(
+                TestStep(
+                    node_id=node,
+                    kind=k,
+                    outcome="would_run",
+                    detail=(
+                        f"«{render(str(config['title']), ctx)}» به صف تیم "
+                        f"«{team.name if team else '؟'}» می‌رود تا یکی از اعضا بردارد."
+                    ),
+                )
             )
         elif k == "create_activity":
             steps.append(
