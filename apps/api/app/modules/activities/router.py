@@ -31,6 +31,7 @@ from app.modules.activities.service import (
     out,
     overlaps,
     record_event,
+    refresh_reminder,
     require_access,
     require_open,
     resolve_links,
@@ -45,6 +46,7 @@ from app.modules.auth.deps import DbDep, require_csrf
 from app.modules.crm.common import ScopeDep, paginate, resolve_owner, unprocessable
 from app.modules.crm.schemas import Page, UserRef
 from app.modules.identity.models import User
+from app.modules.notifications.service import activity_assigned
 
 router = APIRouter(prefix="/activities", tags=["activities"], dependencies=[Depends(require_csrf)])
 
@@ -239,9 +241,14 @@ def create_activity(body: ActivityCreate, db: DbDep, scope: ScopeDep) -> Activit
         customer=customer,
         deal=deal,
     )
+    refresh_reminder(activity)
     db.add(activity)
     db.flush()
     record_event(db, activity, scope, "created", schedule_snapshot(activity))
+    if owner.id != scope.user.id:
+        activity_assigned(
+            db, owner.id, scope.user.full_name, activity.id, activity.type.value, activity.title
+        )
     db.commit()
     db.refresh(activity)
     return out(activity)
@@ -288,6 +295,15 @@ def update_activity(
             {"from": str(activity.owner_id), "to": str(new_owner.id)},
         )
         activity.owner_id, activity.owner = new_owner.id, new_owner
+        if new_owner.id != scope.user.id:
+            activity_assigned(
+                db,
+                new_owner.id,
+                scope.user.full_name,
+                activity.id,
+                activity.type.value,
+                activity.title,
+            )
     data.pop("owner_id", None)
 
     if {"due_date", "start_time", "duration_minutes"} & data.keys():
@@ -313,6 +329,7 @@ def update_activity(
             data.pop(key, None)
     for key, value in data.items():
         setattr(activity, key, value)
+    refresh_reminder(activity)
     activity.version += 1
     db.commit()
     db.refresh(activity)
@@ -366,6 +383,7 @@ def postpone_activity(
     activity.due_date = body.due_date
     activity.start_at = start_at_for(body.due_date, body.start_time)
     activity.duration_minutes = body.duration_minutes if body.start_time else None
+    refresh_reminder(activity)
     activity.version += 1
     record_event(
         db,

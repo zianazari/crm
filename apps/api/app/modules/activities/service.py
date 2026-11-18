@@ -20,6 +20,7 @@ from app.modules.activities.schemas import ActivityBrief, ActivityOut
 from app.modules.crm.access import FORBIDDEN, AccessScope
 from app.modules.crm.common import unprocessable
 from app.modules.crm.models import Customer, Lead
+from app.modules.notifications.service import remind_at
 from app.modules.sales.models import Deal
 
 DEFAULT_DURATION = 30  # minutes assumed for overlap checks when none is given
@@ -38,6 +39,14 @@ def start_at_for(due_date: date, start_time: str | None) -> datetime | None:
         return None
     hours, minutes = (int(x) for x in start_time.split(":"))
     return datetime.combine(due_date, time(hours, minutes), tz()).astimezone(UTC)
+
+
+def refresh_reminder(activity: Activity) -> None:
+    """Recomputes the reminder time; a changed time re-arms the reminder."""
+    new = remind_at(activity.reminder_minutes, activity.start_at, activity.due_date)
+    if new != activity.remind_at:
+        activity.remind_at = new
+        activity.reminded_at = None
 
 
 def is_overdue(activity: Activity, on: date) -> bool:

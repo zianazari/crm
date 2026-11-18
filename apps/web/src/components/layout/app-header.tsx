@@ -1,7 +1,7 @@
-import { Bell, Search } from "lucide-react";
+import { Search } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
 import { MobileNav } from "@/components/layout/mobile-nav";
+import { NotificationBell } from "@/components/layout/notification-bell";
 import { UserMenu } from "@/components/layout/user-menu";
 
 export function AppHeader() {
@@ -25,9 +25,7 @@ export function AppHeader() {
         />
       </form>
       <div className="ms-auto flex items-center gap-2">
-        <Button variant="ghost" size="icon" aria-label="اعلان‌ها">
-          <Bell className="size-5" />
-        </Button>
+        <NotificationBell />
         <UserMenu />
       </div>
     </header>

@@ -21,6 +21,7 @@ from app.db.session import SessionLocal
 from app.modules.messaging import broker
 from app.modules.messaging.providers import build_providers
 from app.modules.messaging.service import Result, process
+from app.modules.notifications import scheduler
 
 logger = logging.getLogger("crm.worker")
 stopping = threading.Event()
@@ -43,6 +44,17 @@ def publisher_loop(url: str) -> None:
             stopping.wait(2)
 
 
+def scheduler_loop() -> None:
+    """Reminders and the daily digest, every 30 seconds (spec 7 scheduler)."""
+    while not stopping.is_set():
+        try:
+            with SessionLocal() as db:
+                scheduler.tick(db)
+        except SQLAlchemyError:
+            logger.exception("Scheduler tick failed; retrying")
+        stopping.wait(30)
+
+
 def main() -> None:
     logging.basicConfig(
         level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s"
@@ -57,6 +69,7 @@ def main() -> None:
             return process(db, redis, providers, settings, message_id)
 
     threading.Thread(target=publisher_loop, args=(url,), daemon=True, name="outbox").start()
+    threading.Thread(target=scheduler_loop, daemon=True, name="scheduler").start()
     signal.signal(signal.SIGTERM, lambda *_: stopping.set())
     signal.signal(signal.SIGINT, lambda *_: stopping.set())
 

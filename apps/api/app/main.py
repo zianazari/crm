@@ -18,6 +18,7 @@ from app.modules.auth.sender import SenderNotConfiguredError
 from app.modules.crm import customers, leads, organizations, reference
 from app.modules.identity import router as identity_router
 from app.modules.messaging import router as messaging
+from app.modules.notifications import router as notifications
 from app.modules.reports import router as reports
 from app.modules.sales import deals, stages
 
@@ -65,6 +66,7 @@ def create_app() -> FastAPI:
         identity_router,
         audit_router,
         messaging,
+        notifications,
     ):
         app.include_router(module.router)
     app.include_router(messaging.webhooks)
