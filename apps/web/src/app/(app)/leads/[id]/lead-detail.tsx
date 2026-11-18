@@ -9,6 +9,7 @@ import {
   Building2,
   CalendarDays,
   Link2,
+  MessageSquare,
   Pencil,
   Phone,
   Tag,
@@ -20,6 +21,7 @@ import { toast } from "sonner";
 
 import { AssignDialog } from "@/components/crm/assign-dialog";
 import { InfoRow, LeadStatusBadge, Owner } from "@/components/crm/bits";
+import { consentText } from "@/components/crm/consent-fields";
 import { ConvertDialog } from "@/components/crm/convert-dialog";
 import { Breadcrumb, DetailError, DetailSkeleton, LimitedRecord } from "@/components/crm/detail-parts";
 import { LeadFormDialog } from "@/components/crm/lead-form-dialog";
@@ -185,6 +187,9 @@ function FullLead({ lead }: { lead: LeadFull }) {
             </InfoRow>
             <InfoRow icon={<UserRound className="size-4" />} label="مسئول">
               <Owner user={lead.owner} />
+            </InfoRow>
+            <InfoRow icon={<MessageSquare className="size-4" />} label="اجازه دریافت پیام">
+              {consentText(lead)}
             </InfoRow>
             <InfoRow icon={<Link2 className="size-4" />} label="منبع">
               {lead.source?.name ?? "—"}

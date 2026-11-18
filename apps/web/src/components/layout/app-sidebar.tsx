@@ -1,11 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { Suspense } from "react";
+import { Suspense, useSyncExternalStore } from "react";
 import { usePathname } from "next/navigation";
 
 import { formatNumber } from "@/lib/format";
-import { useWorkload } from "@/lib/queries";
+import { canManage, useMe, useWorkload } from "@/lib/queries";
 import { cn } from "@/lib/utils";
 import { mainNav, secondaryNav, type NavItem } from "@/lib/navigation";
 
@@ -50,16 +50,23 @@ function NavLink({ item, active, badge }: { item: NavItem; active: boolean; badg
   );
 }
 
+const noopSubscribe = () => () => {};
+
 function NavList({ pathname, onNavigate }: { pathname: string | null; onNavigate?: () => void }) {
   const isActive = (href: string) =>
     pathname !== null && (pathname === href || pathname.startsWith(`${href}/`));
   const { data: workload } = useWorkload();
   const due = workload ? workload.open_count + workload.overdue_count : 0;
+  const { data: me } = useMe();
+  // Role-based items appear after hydration: this subtree can hydrate after the user is
+  // already loaded, and the server rendered it without them.
+  const hydrated = useSyncExternalStore(noopSubscribe, () => true, () => false);
+  const manager = hydrated && canManage(me?.role);
 
   return (
     <div className="flex flex-1 flex-col gap-6" onClick={onNavigate}>
       <nav aria-label="منوی اصلی" className="flex flex-1 flex-col gap-1 px-3">
-        {mainNav.map((item) => (
+        {mainNav.filter((item) => !item.managersOnly || manager).map((item) => (
           <NavLink
             key={item.href}
             item={item}

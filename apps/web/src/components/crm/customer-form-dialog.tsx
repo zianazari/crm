@@ -20,6 +20,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { ConsentFields } from "@/components/crm/consent-fields";
 import { Input } from "@/components/ui/input";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
@@ -40,6 +41,8 @@ type Values = {
   job_title: string;
   description: string;
   tag_ids: string[];
+  sms_consent: boolean;
+  email_consent: boolean;
 };
 
 function initialValues(customer?: CustomerFull): Values {
@@ -55,6 +58,8 @@ function initialValues(customer?: CustomerFull): Values {
     job_title: "",
     description: customer?.description ?? "",
     tag_ids: customer?.tags.map((t) => t.id) ?? [],
+    sms_consent: customer?.sms_consent ?? false,
+    email_consent: customer?.email_consent ?? false,
   };
 }
 
@@ -99,6 +104,8 @@ export function CustomerFormDialog({ customer, trigger }: { customer?: CustomerF
       source_id: values.source_id || null,
       description: values.description || null,
       tag_ids: values.tag_ids,
+      sms_consent: values.sms_consent,
+      email_consent: values.email_consent,
       ...(editing
         ? {}
         : {
@@ -247,6 +254,12 @@ export function CustomerFormDialog({ customer, trigger }: { customer?: CustomerF
           <Field label="برچسب‌ها" className="sm:col-span-2">
             <TagPicker value={values.tag_ids} onChange={(ids) => set("tag_ids", ids)} />
           </Field>
+          <ConsentFields
+            idPrefix="c"
+            sms={values.sms_consent}
+            email={values.email_consent}
+            onChange={(next) => setValues((v) => ({ ...v, sms_consent: next.sms, email_consent: next.email }))}
+          />
           <Field label="توضیحات" htmlFor="c-description" className="sm:col-span-2">
             <Textarea
               id="c-description"

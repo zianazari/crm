@@ -19,6 +19,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { ConsentFields } from "@/components/crm/consent-fields";
 import { Input } from "@/components/ui/input";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
@@ -36,6 +37,8 @@ type Values = {
   owner_id: string;
   description: string;
   tag_ids: string[];
+  sms_consent: boolean;
+  email_consent: boolean;
 };
 
 function initialValues(lead?: LeadFull): Values {
@@ -48,6 +51,8 @@ function initialValues(lead?: LeadFull): Values {
     owner_id: "",
     description: lead?.description ?? "",
     tag_ids: lead?.tags.map((t) => t.id) ?? [],
+    sms_consent: lead?.sms_consent ?? false,
+    email_consent: lead?.email_consent ?? false,
   };
 }
 
@@ -91,6 +96,8 @@ export function LeadFormDialog({ lead, trigger }: { lead?: LeadFull; trigger: Re
       source_id: values.source_id || null,
       description: values.description || null,
       tag_ids: values.tag_ids,
+      sms_consent: values.sms_consent,
+      email_consent: values.email_consent,
       ...(editing ? {} : { owner_id: values.owner_id || null, allow_duplicate: allowDuplicate }),
     };
     try {
@@ -202,6 +209,12 @@ export function LeadFormDialog({ lead, trigger }: { lead?: LeadFull; trigger: Re
           <Field label="برچسب‌ها" className="sm:col-span-2">
             <TagPicker value={values.tag_ids} onChange={(ids) => set("tag_ids", ids)} />
           </Field>
+          <ConsentFields
+            idPrefix="lead"
+            sms={values.sms_consent}
+            email={values.email_consent}
+            onChange={(next) => setValues((v) => ({ ...v, sms_consent: next.sms, email_consent: next.email }))}
+          />
           <Field label="توضیحات" htmlFor="lead-description" className="sm:col-span-2">
             <Textarea
               id="lead-description"
