@@ -1,5 +1,5 @@
 import uuid
-from datetime import date
+from datetime import UTC, date, datetime
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -162,6 +162,9 @@ def create_customer(body: CustomerCreate, db: DbDep, scope: ScopeDep) -> Custome
         owner_id=owner.id,
         owner=owner,
         created_by_id=scope.user.id,
+        sms_consent=bool(body.sms_consent),
+        email_consent=bool(body.email_consent),
+        consent_updated_at=datetime.now(UTC) if (body.sms_consent or body.email_consent) else None,
         tags=tags,
     )
     if organization is not None:
@@ -211,6 +214,11 @@ def update_customer(
         customer.tags = resolve_tags(db, data.pop("tag_ids") or [])
     if "full_name" in data and data["full_name"] is None:
         data.pop("full_name")
+    for key in ("sms_consent", "email_consent"):
+        if data.get(key) is None:
+            data.pop(key, None)
+        elif data[key] != getattr(customer, key):
+            customer.consent_updated_at = datetime.now(UTC)
     for key, value in data.items():
         setattr(customer, key, value)
     db.commit()

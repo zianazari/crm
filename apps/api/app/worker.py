@@ -18,6 +18,7 @@ import app.db.models  # noqa: F401 - registers every table so foreign keys resol
 from app.core.config import get_settings
 from app.core.redis import get_redis
 from app.db.session import SessionLocal
+from app.modules.automation import engine as automation
 from app.modules.messaging import broker
 from app.modules.messaging.providers import build_providers
 from app.modules.messaging.service import Result, process
@@ -55,6 +56,17 @@ def scheduler_loop() -> None:
         stopping.wait(30)
 
 
+def automation_loop() -> None:
+    """Matches domain events to active rules and resumes delayed runs (spec 4.6)."""
+    while not stopping.is_set():
+        try:
+            with SessionLocal() as db:
+                automation.tick(db)
+        except SQLAlchemyError:
+            logger.exception("Automation tick failed; retrying")
+        stopping.wait(3)
+
+
 def main() -> None:
     logging.basicConfig(
         level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s"
@@ -70,6 +82,7 @@ def main() -> None:
 
     threading.Thread(target=publisher_loop, args=(url,), daemon=True, name="outbox").start()
     threading.Thread(target=scheduler_loop, daemon=True, name="scheduler").start()
+    threading.Thread(target=automation_loop, daemon=True, name="automation").start()
     signal.signal(signal.SIGTERM, lambda *_: stopping.set())
     signal.signal(signal.SIGINT, lambda *_: stopping.set())
 

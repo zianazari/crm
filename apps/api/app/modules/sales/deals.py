@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 from app.core.config import get_settings
 from app.modules.activities.service import next_activities
 from app.modules.auth.deps import DbDep, require_csrf
+from app.modules.automation.events import emit
 from app.modules.crm.access import AccessScope
 from app.modules.crm.common import (
     NOT_FOUND,
@@ -357,6 +358,13 @@ def create_deal(body: DealCreate, db: DbDep, scope: ScopeDep) -> DealOut:
     db.add(deal)
     db.flush()
     record_history(db, deal, scope, None, None)
+    emit(
+        db,
+        "deal.stage_entered",
+        "deal",
+        deal.id,
+        {"stage_id": str(deal.stage_id), "from_stage_id": None},
+    )
     db.commit()
     return full_view(deal, 0)
 
@@ -407,6 +415,13 @@ def move_deal(
         deal.stage_id, deal.stage = stage.id, stage
         deal.version += 1
         record_history(db, deal, scope, previous, DealStatus.OPEN)
+        emit(
+            db,
+            "deal.stage_entered",
+            "deal",
+            deal.id,
+            {"stage_id": str(stage.id), "from_stage_id": str(previous)},
+        )
         db.commit()
     return full_view(deal, payment_totals(db, [deal.id]).get(deal.id, 0))
 
@@ -422,6 +437,7 @@ def _close(
     deal.closed_owner_id = deal.owner_id
     deal.version += 1
     record_history(db, deal, scope, deal.stage_id, DealStatus.OPEN, reason)
+    emit(db, f"deal.{new_status.value}", "deal", deal.id)
 
 
 @router.post("/{deal_id}/win", response_model=DealOut, responses=_CONFLICT)
@@ -485,6 +501,13 @@ def reopen_deal(
     deal.closed_by_id = deal.closed_owner_id = None
     deal.version += 1
     record_history(db, deal, scope, previous_stage, previous_status, body.reason.strip(), details)
+    emit(
+        db,
+        "deal.stage_entered",
+        "deal",
+        deal.id,
+        {"stage_id": str(deal.stage_id), "reopened": True},
+    )
     db.commit()
     return full_view(deal, payment_totals(db, [deal.id]).get(deal.id, 0))
 

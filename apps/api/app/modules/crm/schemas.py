@@ -73,6 +73,8 @@ class ContactFields(BaseModel):
 
 
 class LeadCreate(ContactFields):
+    sms_consent: bool | None = None
+    email_consent: bool | None = None
     full_name: Name
     company_name: str | None = Field(default=None, max_length=200)
     description: str | None = Field(default=None, max_length=5000)
@@ -84,6 +86,8 @@ class LeadCreate(ContactFields):
 
 
 class LeadUpdate(ContactFields):
+    sms_consent: bool | None = None
+    email_consent: bool | None = None
     full_name: Name | None = None
     company_name: str | None = Field(default=None, max_length=200)
     description: str | None = Field(default=None, max_length=5000)
@@ -133,6 +137,9 @@ class LeadOut(BaseModel):
     converted_customer_id: uuid.UUID | None
     converted_at: datetime | None
     archived_at: datetime | None
+    sms_consent: bool
+    email_consent: bool
+    consent_updated_at: datetime | None
 
 
 LeadView = Annotated[LeadOut | LeadLimited, Field(discriminator="access")]
@@ -171,6 +178,8 @@ class CustomerOrganizationOut(BaseModel):
 
 
 class CustomerCreate(ContactFields):
+    sms_consent: bool | None = None
+    email_consent: bool | None = None
     full_name: Name
     phone: str | None = Field(default=None, max_length=30)
     preferred_channel: ContactChannel | None = None
@@ -184,6 +193,8 @@ class CustomerCreate(ContactFields):
 
 
 class CustomerUpdate(ContactFields):
+    sms_consent: bool | None = None
+    email_consent: bool | None = None
     full_name: Name | None = None
     phone: str | None = Field(default=None, max_length=30)
     preferred_channel: ContactChannel | None = None
@@ -222,6 +233,9 @@ class CustomerOut(BaseModel):
     tags: list[Ref]
     organizations: list[CustomerOrganizationOut]
     archived_at: datetime | None
+    sms_consent: bool
+    email_consent: bool
+    consent_updated_at: datetime | None
 
 
 CustomerView = Annotated[CustomerOut | CustomerLimited, Field(discriminator="access")]

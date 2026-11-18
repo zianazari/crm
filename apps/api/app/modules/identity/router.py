@@ -27,6 +27,7 @@ from app.modules.auth.deps import (
     require_csrf,
 )
 from app.modules.auth.sessions import SessionService
+from app.modules.automation.events import emit
 from app.modules.crm.access import AccessScope
 from app.modules.crm.common import ScopeDep, unprocessable
 from app.modules.crm.models import Customer, Lead, LeadStatus, OwnershipHistory
@@ -370,11 +371,19 @@ def _transfer(db: DbDep, scope: AccessScope, source: User, target: User) -> None
     ).unique():
         lead.owner_id, lead.owner = target.id, target
         history("lead", lead.id)
+        emit(db, "record.assigned", "lead", lead.id, {"from": str(source.id), "to": str(target.id)})
     for customer in db.scalars(
         select(Customer).where(Customer.owner_id == source.id, Customer.archived_at.is_(None))
     ).unique():
         customer.owner_id, customer.owner = target.id, target
         history("customer", customer.id)
+        emit(
+            db,
+            "record.assigned",
+            "customer",
+            customer.id,
+            {"from": str(source.id), "to": str(target.id)},
+        )
     for deal in db.scalars(
         select(Deal).where(
             Deal.owner_id == source.id, Deal.status == DealStatus.OPEN, Deal.archived_at.is_(None)
@@ -383,6 +392,7 @@ def _transfer(db: DbDep, scope: AccessScope, source: User, target: User) -> None
         deal.owner_id, deal.owner = target.id, target
         deal.version += 1
         history("deal", deal.id)
+        emit(db, "record.assigned", "deal", deal.id, {"from": str(source.id), "to": str(target.id)})
     for activity in db.scalars(
         select(Activity).where(Activity.owner_id == source.id, Activity.status.in_(OPEN_STATUSES))
     ).unique():

@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 from app.core.config import get_settings
 from app.core.normalize import normalize_email, normalize_mobile
 from app.modules.auth.deps import CurrentUserDep, DbDep
+from app.modules.automation.events import emit
 from app.modules.crm.access import AccessScope, build_scope
 from app.modules.crm.models import Customer, Lead, LeadSource, OwnershipHistory, Tag
 from app.modules.crm.schemas import DuplicateConflict, DuplicateMatch, UserRef
@@ -177,8 +178,16 @@ def change_owner(
             reason=reason,
         )
     )
+    previous_owner = record.owner_id
     record.owner_id = new_owner.id
     record.owner = new_owner
+    emit(
+        db,
+        "record.assigned",
+        entity_type,
+        record.id,
+        {"from": str(previous_owner), "to": str(new_owner.id)},
+    )
     if new_owner.id != scope.user.id:
         name = str(getattr(record, "full_name", None) or getattr(record, "title", ""))
         record_assigned(
