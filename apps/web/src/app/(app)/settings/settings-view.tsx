@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { GitBranch, Link2, ScrollText, ShieldAlert, UserCog, Users } from "lucide-react";
+import { GitBranch, Link2, ScrollText, Send, ShieldAlert, UserCog, Users } from "lucide-react";
 
 import { PageHeader } from "@/components/layout/page-header";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -9,15 +9,17 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useMe } from "@/lib/queries";
 import { cn } from "@/lib/utils";
 import { AuditTab, SourcesTab, StagesTab, TeamsTab } from "./other-tabs";
+import { MessagesTab } from "./messages-tab";
 import { UsersTab } from "./users-tab";
 
-type TabKey = "users" | "teams" | "stages" | "sources" | "audit";
+type TabKey = "users" | "teams" | "stages" | "sources" | "messages" | "audit";
 
 const TABS: { key: TabKey; label: string; icon: typeof Users; roles: string[] }[] = [
   { key: "users", label: "کاربران", icon: UserCog, roles: ["admin", "sales_manager"] },
   { key: "teams", label: "تیم‌ها", icon: Users, roles: ["admin", "sales_manager"] },
   { key: "stages", label: "مراحل فروش", icon: GitBranch, roles: ["admin", "sales_manager"] },
   { key: "sources", label: "منابع جذب", icon: Link2, roles: ["admin"] },
+  { key: "messages", label: "پیام‌های ارسالی", icon: Send, roles: ["admin"] },
   { key: "audit", label: "سوابق ممیزی", icon: ScrollText, roles: ["admin"] },
 ];
 
@@ -65,6 +67,7 @@ export function SettingsView() {
             {current.key === "teams" ? <TeamsTab admin={admin} /> : null}
             {current.key === "stages" ? <StagesTab /> : null}
             {current.key === "sources" ? <SourcesTab /> : null}
+            {current.key === "messages" ? <MessagesTab /> : null}
             {current.key === "audit" ? <AuditTab /> : null}
           </div>
         </>

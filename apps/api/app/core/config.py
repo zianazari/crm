@@ -22,7 +22,8 @@ class Settings(BaseSettings):
     environment: Literal["development", "test", "staging", "production"] = "development"
     database_url: PostgresDsn = PostgresDsn("postgresql+psycopg://crm:crm@localhost:5432/crm")
     redis_url: RedisDsn = RedisDsn("redis://localhost:6379/0")
-    rabbitmq_url: str = "amqp://crm:crm@localhost:5672/"
+    # 127.0.0.1, not localhost: pika may try IPv6 ::1 first, where Compose does not listen.
+    rabbitmq_url: str = "amqp://crm:crm@127.0.0.1:5672/"
     cors_origins: list[str] = ["http://localhost:3000"]
 
     # Organization defaults (spec section 0): base currency is toman, Jalali display.
@@ -49,6 +50,27 @@ class Settings(BaseSettings):
     otp_max_requests_per_ip_hour: int = 30
     otp_max_verifications_per_ip_hour: int = 60
 
+    # Messaging (spec 7: outbox -> RabbitMQ -> worker -> provider adapter).
+    # "console": development only, the OTP is printed to the API log (no queue needed).
+    # "queue": messages go through the outbox, RabbitMQ and the worker.
+    messaging_mode: Literal["console", "queue"] = "console"
+    sms_provider: Literal["sink"] = "sink"  # real providers are added when chosen (spec 13.8)
+    sms_sink_url: str = "http://localhost:8030"
+    sms_webhook_secret: SecretStr = SecretStr("dev-only-sms-webhook-secret")
+    # Where the SMS provider sends delivery reports (reachable from the provider).
+    sms_callback_url: str | None = "http://host.docker.internal:8000/webhooks/sms"
+    smtp_host: str = "localhost"
+    smtp_port: int = 1025
+    smtp_username: str | None = None
+    smtp_password: SecretStr | None = None
+    smtp_starttls: bool = False
+    email_from: str = "CRM <no-reply@crm.local>"
+    message_max_attempts: int = 5
+    # Prefix for RabbitMQ exchange/queue names; tests use their own so a running dev
+    # worker never consumes test messages.
+    queue_namespace: str = ""
+    provider_timeout_seconds: float = 10
+
     @property
     def is_development(self) -> bool:
         return self.environment == "development"
@@ -60,6 +82,8 @@ class Settings(BaseSettings):
                 raise ValueError("CRM_JWT_SECRET must be set outside development")
             if self.otp_secret.get_secret_value() == _DEV_OTP_SECRET:
                 raise ValueError("CRM_OTP_SECRET must be set outside development")
+        if self.environment in {"staging", "production"} and self.sms_provider == "sink":
+            raise ValueError("The sms-sink simulator cannot be used outside development and test")
         for secret in (self.jwt_secret, self.otp_secret):
             if len(secret.get_secret_value()) < 32:
                 raise ValueError("JWT and OTP secrets must be at least 32 characters")

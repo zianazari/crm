@@ -26,7 +26,7 @@ class CapturingSender:
     def __init__(self) -> None:
         self.sent: list[tuple[Channel, str, str]] = []
 
-    def send(self, channel: Channel, destination: str, code: str) -> None:
+    def send(self, channel: Channel, destination: str, code: str, context: object = None) -> None:
         self.sent.append((channel, destination, code))
 
     @property

@@ -26,8 +26,8 @@ RedisDep = Annotated[Redis, Depends(get_redis)]
 DbDep = Annotated[Session, Depends(get_db)]
 
 
-def get_otp_sender(settings: SettingsDep) -> OtpSender:
-    return build_otp_sender(settings)
+def get_otp_sender(settings: SettingsDep, db: DbDep, redis: RedisDep) -> OtpSender:
+    return build_otp_sender(settings, db, redis)
 
 
 def get_otp_service(

@@ -17,6 +17,7 @@ os.environ["CRM_ENVIRONMENT"] = "test"
 os.environ["CRM_DATABASE_URL"] = TEST_DATABASE_URL.render_as_string(hide_password=False)
 os.environ["CRM_REDIS_URL"] = os.environ.get("CRM_TEST_REDIS_URL", "redis://localhost:6379/15")
 os.environ["CRM_COOKIE_SECURE"] = "false"  # TestClient talks plain http
+os.environ["CRM_QUEUE_NAMESPACE"] = "test"  # never share queues with a running dev worker
 
 import uuid  # noqa: E402
 from dataclasses import dataclass  # noqa: E402
