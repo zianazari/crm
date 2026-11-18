@@ -1,15 +1,23 @@
 import type { Metadata } from "next";
+import { connection } from "next/server";
+import { Suspense } from "react";
 
-import { ComingSoon } from "@/components/layout/coming-soon";
-import { PageHeader } from "@/components/layout/page-header";
+import { Skeleton } from "@/components/ui/skeleton";
+import { OverviewView } from "./overview-view";
 
 export const metadata: Metadata = { title: "نمای کلی" };
 
 export default function OverviewPage() {
   return (
-    <>
-      <PageHeader title="نمای کلی" description="خلاصه فروش، فعالیت‌های امروز و فروش‌های نیازمند پیگیری." />
-      <ComingSoon summary="شاخص‌های فروش این ماه، دریافتی، مانده دریافت‌نشده، فعالیت‌های امروز و معوق پس از آماده‌شدن API نمایش داده می‌شوند." />
-    </>
+    <Suspense fallback={<Skeleton className="h-[40rem]" />}>
+      <OverviewLoader />
+    </Suspense>
   );
+}
+
+/** Periods are relative to today in the organization's time zone, so render per request. */
+async function OverviewLoader() {
+  await connection();
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Tehran" }).format(new Date());
+  return <OverviewView today={today} />;
 }

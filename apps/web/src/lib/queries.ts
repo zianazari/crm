@@ -41,6 +41,7 @@ export const keys = {
   deals: ["deals"] as const,
   activities: ["activities"] as const,
   timeline: ["timeline"] as const,
+  reports: ["reports"] as const,
 };
 
 export function useLeads(params: ListParams) {
@@ -191,5 +192,36 @@ export function useTimeline(subject: TimelineSubject, kinds: TimelineKind[] | nu
       return apiFetch<{ items: TimelineEntry[]; has_more: boolean }>(`/timeline?${search.toString()}`);
     },
     getNextPageParam: (last) => (last.has_more ? (last.items.at(-1)?.at ?? null) : null),
+  });
+}
+
+export type ReportSummary = {
+  currency: string;
+  date_from: string;
+  date_to: string;
+  evaluated_on: string;
+  sales: { count: number; amount: number };
+  received: number;
+  unpaid_balance: number;
+  pipeline: { count: number; amount: number };
+  new_leads: number;
+  new_customers: number;
+  first_purchase_customers: number;
+  win_rate: { numerator: number; denominator: number; rate: number | null };
+  lead_conversion: { numerator: number; denominator: number; rate: number | null };
+  first_contact_median_hours: number | null;
+  overdue_activities: number;
+  deals_without_next_action: number;
+};
+
+export type InboundRow = { key: string; label: string; open: number; won: number; lost: number };
+
+/** Any report endpoint; the payload type is chosen by the caller. */
+export function useReport<T>(path: string, params: ListParams, enabled = true) {
+  return useQuery({
+    queryKey: [...keys.reports, path, params],
+    queryFn: () => apiFetch<T>(`/reports/${path}${toQuery(params)}`),
+    placeholderData: (previous) => previous,
+    enabled,
   });
 }
