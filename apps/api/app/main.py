@@ -15,6 +15,7 @@ from app.modules.activities import timeline
 from app.modules.auth.router import router as auth_router
 from app.modules.auth.sender import SenderNotConfiguredError
 from app.modules.crm import customers, leads, organizations, reference
+from app.modules.reports import router as reports
 from app.modules.sales import deals, stages
 
 
@@ -48,7 +49,17 @@ def create_app() -> FastAPI:
         return JSONResponse({"detail": "ارسال کد ورود هنوز پیکربندی نشده است."}, status_code=503)
 
     app.include_router(auth_router)
-    for module in (leads, customers, organizations, reference, deals, stages, activities, timeline):
+    for module in (
+        leads,
+        customers,
+        organizations,
+        reference,
+        deals,
+        stages,
+        activities,
+        timeline,
+        reports,
+    ):
         app.include_router(module.router)
 
     @app.get("/health/live", tags=["health"])
