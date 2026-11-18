@@ -107,9 +107,9 @@ export function LoginForm() {
 
   if (!challenge) {
     return (
-      <form onSubmit={requestCode} className="space-y-5" noValidate>
-        <div className="space-y-2">
-          <label htmlFor="destination" className="text-sm font-medium">
+      <form onSubmit={requestCode} className="mt-6" noValidate>
+        <div className="space-y-3">
+          <label htmlFor="destination" className="block text-sm leading-5 font-medium">
             ایمیل یا شماره‌ی همراه
           </label>
           <Input
@@ -128,17 +128,21 @@ export function LoginForm() {
             placeholder="name@example.com"
             aria-invalid={error ? true : undefined}
             aria-describedby={error ? "destination-error" : undefined}
-            className="h-11 text-start"
+            className="h-12 rounded-lg text-sm text-start md:text-sm"
           />
         </div>
 
         {error ? (
-          <p id="destination-error" role="alert" className="text-sm text-destructive">
+          <p id="destination-error" role="alert" className="mt-2 text-sm text-destructive">
             {error}
           </p>
         ) : null}
 
-        <Button type="submit" className="h-11 w-full" disabled={pending || !destination.trim()}>
+        <Button
+          type="submit"
+          className="mt-3.5 h-[42px] w-full rounded-lg text-sm font-semibold"
+          disabled={pending || !destination.trim()}
+        >
           {pending ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
           ادامه
         </Button>
@@ -152,7 +156,7 @@ export function LoginForm() {
         e.preventDefault();
         if (code.length === CODE_LENGTH) void verify(code);
       }}
-      className="space-y-5"
+      className="mt-6 space-y-3.5"
     >
       <p className="text-sm text-muted-foreground">
         اگر{" "}
@@ -160,8 +164,8 @@ export function LoginForm() {
         ثبت شده باشد، کد {formatNumber(CODE_LENGTH)} رقمی به آن ارسال شده است.
       </p>
 
-      <div className="space-y-2">
-        <label htmlFor="code" className="text-sm font-medium">
+      <div className="space-y-3">
+        <label htmlFor="code" className="block text-sm leading-5 font-medium">
           کد ورود
         </label>
         <Input
@@ -175,7 +179,7 @@ export function LoginForm() {
           maxLength={CODE_LENGTH * 2}
           placeholder="•••••"
           aria-describedby={error ? "code-error" : undefined}
-          className="h-12 text-center text-2xl tracking-[0.6em]"
+          className="h-12 rounded-lg text-center text-2xl tracking-[0.6em]"
         />
       </div>
 
@@ -185,7 +189,11 @@ export function LoginForm() {
         </p>
       ) : null}
 
-      <Button type="submit" className="h-11 w-full" disabled={pending || code.length !== CODE_LENGTH}>
+      <Button
+        type="submit"
+        className="h-[42px] w-full rounded-lg text-sm font-semibold"
+        disabled={pending || code.length !== CODE_LENGTH}
+      >
         {pending ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
         ورود
       </Button>
