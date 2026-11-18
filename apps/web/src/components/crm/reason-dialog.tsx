@@ -24,15 +24,24 @@ export function ReasonDialog({
   destructive,
   trigger,
   onConfirm,
+  open: controlledOpen,
+  onOpenChange,
 }: {
   title: string;
   description: string;
   confirmLabel: string;
   destructive?: boolean;
-  trigger: ReactElement;
+  trigger?: ReactElement;
   onConfirm: (reason: string) => Promise<boolean>;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = controlledOpen ?? internalOpen;
+  const setOpen = (next: boolean) => {
+    setInternalOpen(next);
+    onOpenChange?.(next);
+  };
   const [reason, setReason] = useState("");
   const [pending, setPending] = useState(false);
 
@@ -44,7 +53,7 @@ export function ReasonDialog({
         setReason("");
       }}
     >
-      <DialogTrigger render={trigger} />
+      {trigger ? <DialogTrigger render={trigger} /> : null}
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>

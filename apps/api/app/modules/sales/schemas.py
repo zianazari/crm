@@ -4,6 +4,7 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.modules.activities.schemas import ActivityBrief
 from app.modules.crm.schemas import Ref, UserRef
 from app.modules.sales.models import DealStatus, PaymentKind
 
@@ -84,6 +85,8 @@ class DealOut(BaseModel):
     paid_amount: int = 0
     # Won deals only: contract amount minus net payments (spec section 0, decision 2).
     outstanding_amount: int | None = None
+    # Earliest open activity; None on an open deal means "no follow-up planned" (spec 4.3).
+    next_activity: ActivityBrief | None = None
 
 
 DealView = Annotated[DealOut | DealLimited, Field(discriminator="access")]

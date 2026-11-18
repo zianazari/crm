@@ -2,7 +2,10 @@
 
 import { useState, type DragEvent } from "react";
 import { useRouter } from "next/navigation";
-import { Building2, CircleCheck, CircleX, EllipsisVertical, Lock, Plus } from "lucide-react";
+import { Building2, CalendarPlus, CircleCheck, CircleX, EllipsisVertical, Lock, Plus } from "lucide-react";
+
+import { NextActionPill } from "@/components/crm/activity-bits";
+import { ActivityFormDialog } from "@/components/crm/activity-form-dialog";
 
 import { Owner } from "@/components/crm/bits";
 import { CloseDealDialog, type CloseMode } from "@/components/crm/close-deal-dialog";
@@ -239,6 +242,23 @@ function DealCard({
               ? formatToman(full.amount)
               : "بدون مبلغ"}
         </p>
+      ) : null}
+
+      {full && full.status === "open" ? (
+        <div className="flex items-center justify-between gap-2" onClick={(e) => e.stopPropagation()}>
+          <NextActionPill next={full.next_activity} />
+          {!full.next_activity ? (
+            <ActivityFormDialog
+              compact
+              subject={{ deal: { id: full.id, name: full.title } }}
+              trigger={
+                <Button variant="ghost" size="icon-sm" aria-label="ساخت فعالیت برای این فروش">
+                  <CalendarPlus />
+                </Button>
+              }
+            />
+          ) : null}
+        </div>
       ) : null}
 
       <div className="flex items-center justify-between gap-2 text-xs">

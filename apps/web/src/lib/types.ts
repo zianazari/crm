@@ -134,6 +134,7 @@ export type DealFull = Omit<DealLimited, "access"> & {
   archived_at: string | null;
   paid_amount: number;
   outstanding_amount: number | null;
+  next_activity: ActivityBrief | null;
 };
 
 export type Deal = DealFull | DealLimited;
@@ -188,3 +189,71 @@ export const DEAL_STATUS_LABELS: Record<DealStatus, string> = {
   won: "فروش انجام شد",
   lost: "به نتیجه نرسید",
 };
+
+// -- activities -----------------------------------------------------------------
+
+export type ActivityType = "call" | "meeting" | "follow_up" | "task";
+export type ActivityStatus = "pending" | "in_progress" | "done" | "canceled";
+export type Priority = "low" | "normal" | "high";
+export type LinkRef = { id: string; name: string };
+
+export type Activity = {
+  id: string;
+  type: ActivityType;
+  title: string;
+  description: string | null;
+  owner: UserRef;
+  created_by: UserRef;
+  due_date: string;
+  start_at: string | null;
+  duration_minutes: number | null;
+  priority: Priority;
+  reminder_minutes: number | null;
+  status: ActivityStatus;
+  outcome: string | null;
+  cancel_reason: string | null;
+  completed_at: string | null;
+  completed_by: UserRef | null;
+  created_at: string;
+  version: number;
+  lead: LinkRef | null;
+  customer: LinkRef | null;
+  deal: LinkRef | null;
+  overdue: boolean;
+};
+
+export type ActivityBrief = Pick<Activity, "id" | "type" | "title" | "due_date" | "start_at" | "overdue">;
+
+export type Workload = {
+  date: string;
+  owner: UserRef;
+  open_count: number;
+  overdue_count: number;
+  timed_minutes: number;
+  overlaps: { first: string; second: string }[];
+};
+
+export type TimelineKind = "activity" | "note" | "stage" | "payment";
+
+export type TimelineEntry = {
+  kind: TimelineKind;
+  id: string;
+  at: string;
+  actor: UserRef;
+  title: string;
+  body: string | null;
+  activity: Activity | null;
+  deal: LinkRef | null;
+};
+
+export const ACTIVITY_TYPE_LABELS: Record<ActivityType, string> = {
+  call: "تماس",
+  meeting: "جلسه",
+  follow_up: "پیگیری",
+  task: "وظیفه",
+};
+
+export const PRIORITY_LABELS: Record<Priority, string> = { low: "کم", normal: "عادی", high: "زیاد" };
+
+/** Links an activity or note can carry; names are only for display. */
+export type ActivitySubject = { deal?: LinkRef; customer?: LinkRef; lead?: LinkRef };

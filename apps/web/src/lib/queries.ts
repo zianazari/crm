@@ -1,10 +1,14 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 
 import { apiFetch, fetchMe, type CurrentUser } from "@/lib/api";
 import type {
+  Activity,
   Board,
+  TimelineEntry,
+  TimelineKind,
+  Workload,
   Customer,
   Deal,
   DealHistoryEntry,
@@ -35,6 +39,8 @@ export const keys = {
   leads: ["leads"] as const,
   customers: ["customers"] as const,
   deals: ["deals"] as const,
+  activities: ["activities"] as const,
+  timeline: ["timeline"] as const,
 };
 
 export function useLeads(params: ListParams) {
@@ -138,5 +144,52 @@ export function useDealPayments(id: string, enabled: boolean) {
     queryKey: [...keys.deals, id, "payments"],
     queryFn: () => apiFetch<Payment[]>(`/deals/${id}/payments`),
     enabled,
+  });
+}
+
+export function useActivities(params: ListParams) {
+  return useQuery({
+    queryKey: [...keys.activities, "list", params],
+    queryFn: () => apiFetch<Page<Activity>>(`/activities${toQuery(params)}`),
+    placeholderData: (previous) => previous,
+  });
+}
+
+export function useCalendar(params: ListParams) {
+  return useQuery({
+    queryKey: [...keys.activities, "calendar", params],
+    queryFn: () => apiFetch<Activity[]>(`/activities/calendar${toQuery(params)}`),
+    placeholderData: (previous) => previous,
+  });
+}
+
+export function useWorkload(ownerId?: string) {
+  return useQuery({
+    queryKey: [...keys.activities, "workload", ownerId ?? "me"],
+    queryFn: () => apiFetch<Workload>(`/activities/workload${toQuery({ owner_id: ownerId })}`),
+    refetchInterval: 5 * 60_000,
+  });
+}
+
+export function useOwnerDay(ownerId: string | undefined, day: string | null) {
+  return useQuery({
+    queryKey: [...keys.activities, "day", ownerId, day],
+    queryFn: () => apiFetch<Activity[]>(`/activities/day${toQuery({ owner_id: ownerId, day })}`),
+    enabled: Boolean(ownerId && day),
+  });
+}
+
+export type TimelineSubject = { deal_id?: string; customer_id?: string; lead_id?: string };
+
+export function useTimeline(subject: TimelineSubject, kinds: TimelineKind[] | null) {
+  return useInfiniteQuery({
+    queryKey: [...keys.timeline, subject, kinds],
+    initialPageParam: null as string | null,
+    queryFn: ({ pageParam }) => {
+      const search = new URLSearchParams(toQuery({ ...subject, limit: 20, before: pageParam ?? undefined }).slice(1));
+      for (const k of kinds ?? []) search.append("kinds", k);
+      return apiFetch<{ items: TimelineEntry[]; has_more: boolean }>(`/timeline?${search.toString()}`);
+    },
+    getNextPageParam: (last) => (last.has_more ? (last.items.at(-1)?.at ?? null) : null),
   });
 }

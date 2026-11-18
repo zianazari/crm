@@ -50,7 +50,7 @@ def _clean_state() -> Iterator[None]:
     get_redis().flushdb()
     yield
     with SessionLocal() as db:
-        db.execute(text("TRUNCATE auth_sessions, users, teams, tags CASCADE"))
+        db.execute(text("TRUNCATE auth_sessions, users, teams, tags, activities, notes CASCADE"))
         db.commit()
     get_redis().flushdb()
 
