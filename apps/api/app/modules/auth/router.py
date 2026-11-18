@@ -3,6 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from fastapi.responses import JSONResponse
 
+from app.modules.audit.service import audit
 from app.modules.auth.deps import (
     ACCESS_COOKIE,
     REFRESH_COOKIE,
@@ -78,6 +79,16 @@ def verify_otp(
         raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="کد نادرست یا منقضی شده است.")
 
     tokens = sessions.create(user, request.headers.get("user-agent"), client_ip(request))
+    audit(
+        db,
+        "auth.login",
+        user.id,
+        "user",
+        user.id,
+        {"session_id": str(tokens.session_id)},
+        client_ip(request),
+    )
+    db.commit()
     set_auth_cookies(response, settings, tokens)
     return UserOut.model_validate(user)
 
@@ -118,6 +129,8 @@ def logout(
             session_id = None
     if session_id is not None:
         sessions.revoke(session_id, "logout")
+        audit(sessions.db, "auth.logout", None, "session", session_id, None, client_ip(request))
+        sessions.db.commit()
     elif refresh_token:
         sessions.revoke_by_refresh_token(refresh_token, "logout")
     clear_auth_cookies(response, settings)

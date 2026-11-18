@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 
+from app.modules.audit.service import audit
 from app.modules.auth.deps import DbDep, require_csrf
 from app.modules.crm.common import (
     NOT_FOUND,
@@ -40,6 +41,8 @@ def create_source(body: LeadSourceIn, db: DbDep, scope: ScopeDep) -> LeadSourceO
     source = LeadSource(**body.model_dump())
     db.add(source)
     try:
+        db.flush()
+        audit(db, "source.created", scope.user.id, "lead_source", source.id, body.model_dump())
         db.commit()
     except IntegrityError:
         db.rollback()
@@ -56,6 +59,7 @@ def update_source(
     source = db.get(LeadSource, source_id)
     if source is None:
         raise NOT_FOUND
+    audit(db, "source.updated", scope.user.id, "lead_source", source.id, body.model_dump())
     for key, value in body.model_dump().items():
         setattr(source, key, value)
     try:

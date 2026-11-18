@@ -257,3 +257,45 @@ export const PRIORITY_LABELS: Record<Priority, string> = { low: "کم", normal: 
 
 /** Links an activity or note can carry; names are only for display. */
 export type ActivitySubject = { deal?: LinkRef; customer?: LinkRef; lead?: LinkRef };
+
+// -- administration ----------------------------------------------------------------
+
+export type Role = "admin" | "sales_manager" | "sales_rep";
+
+export const ROLE_LABELS: Record<Role, string> = {
+  admin: "ادمین",
+  sales_manager: "مدیر فروش",
+  sales_rep: "کارشناس فروش",
+};
+
+export type AdminUser = {
+  id: string;
+  full_name: string;
+  mobile: string | null;
+  email: string | null;
+  role: Role;
+  is_active: boolean;
+  team: Ref | null;
+  manages_team: Ref | null;
+};
+
+export type Team = {
+  id: string;
+  name: string;
+  is_active: boolean;
+  manager: UserRef | null;
+  member_count: number;
+};
+
+export type OpenItems = { leads: number; customers: number; deals: number; activities: number };
+
+export type AuditEntry = {
+  id: string;
+  action: string;
+  actor: UserRef | null;
+  entity_type: string | null;
+  entity_id: string | null;
+  details: Record<string, unknown> | null;
+  ip_address: string | null;
+  at: string;
+};

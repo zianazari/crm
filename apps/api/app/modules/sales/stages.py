@@ -5,6 +5,7 @@ import uuid
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import func, select
 
+from app.modules.audit.service import audit
 from app.modules.auth.deps import DbDep, require_csrf
 from app.modules.crm.access import AccessScope
 from app.modules.crm.common import NOT_FOUND, ScopeDep, unprocessable
@@ -35,6 +36,8 @@ def create_stage(body: StageIn, db: DbDep, scope: ScopeDep) -> StageOut:
     _require_settings(scope)
     stage = Stage(name=body.name.strip(), sort_order=body.sort_order)
     db.add(stage)
+    db.flush()
+    audit(db, "stage.created", scope.user.id, "stage", stage.id, {"name": stage.name})
     db.commit()
     return StageOut.model_validate(stage)
 
@@ -45,6 +48,17 @@ def update_stage(stage_id: uuid.UUID, body: StageIn, db: DbDep, scope: ScopeDep)
     stage = db.get(Stage, stage_id)
     if stage is None:
         raise NOT_FOUND
+    audit(
+        db,
+        "stage.updated",
+        scope.user.id,
+        "stage",
+        stage.id,
+        {
+            "name": [stage.name, body.name.strip()],
+            "sort_order": [stage.sort_order, body.sort_order],
+        },
+    )
     stage.name = body.name.strip()
     stage.sort_order = body.sort_order
     db.commit()
@@ -88,5 +102,13 @@ def deactivate_stage(
     if not remaining:
         raise unprocessable("حداقل یک مرحله فعال لازم است.")
     stage.is_active = False
+    audit(
+        db,
+        "stage.deactivated",
+        scope.user.id,
+        "stage",
+        stage.id,
+        {"moved_deals": len(open_deals), "to": str(body.move_to_stage_id) if open_deals else None},
+    )
     db.commit()
     return StageOut.model_validate(stage)
