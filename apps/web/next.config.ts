@@ -10,6 +10,12 @@ const nextConfig: NextConfig = {
   },
   cacheComponents: true,
   partialPrefetching: true,
+  experimental: {
+    // The persistent dev cache kept serving stylesheets without Tailwind classes
+    // added since the last cold start (see README). Dev restarts are fast enough
+    // without it; production builds keep their cache.
+    turbopackFileSystemCacheForDev: false,
+  },
   turbopack: {
     rules: {
       "*.css": {

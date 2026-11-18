@@ -75,7 +75,7 @@ pnpm dev
 docker compose exec redis sh -c "redis-cli --scan --pattern 'otp:*' | xargs -r redis-cli del"
 ```
 
-اگر پس از تغییر CSS، صفحه‌ها در `pnpm dev` با استایل قدیمی نمایش داده شدند (به‌ویژه پس از اجرای `pnpm build` هم‌زمان با سرور توسعه)، سرور توسعه را متوقف و `apps/web/.next/dev` را پاک کنید.
+حافظه دائمی Turbopack برای سرور توسعه در `next.config.ts` خاموش است، چون کلاس‌های تازه Tailwind را در CSS سرور توسعه منعکس نمی‌کرد. اگر با این حال استایل قدیمی دیدید، سرور توسعه را متوقف و `apps/web/.next/dev` را پاک کنید.
 
 اگر پورتی روی سیستم شما اشغال است، `CRM_POSTGRES_PORT`، `CRM_REDIS_PORT` یا `CRM_RABBITMQ_PORT` را هنگام اجرای Docker Compose تغییر دهید و `CRM_DATABASE_URL` را مطابق آن تنظیم کنید.
 
