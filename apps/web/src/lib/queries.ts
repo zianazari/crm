@@ -42,6 +42,7 @@ export const keys = {
   activities: ["activities"] as const,
   timeline: ["timeline"] as const,
   reports: ["reports"] as const,
+  settings: ["settings"] as const,
 };
 
 export function useLeads(params: ListParams) {
@@ -222,6 +223,15 @@ export function useReport<T>(path: string, params: ListParams, enabled = true) {
     queryKey: [...keys.reports, path, params],
     queryFn: () => apiFetch<T>(`/reports/${path}${toQuery(params)}`),
     placeholderData: (previous) => previous,
+    enabled,
+  });
+}
+
+/** Settings data: users, teams, stages (incl. inactive), sources, audit. */
+export function useSettings<T>(path: string, params: ListParams = {}, enabled = true) {
+  return useQuery({
+    queryKey: [...keys.settings, path, params],
+    queryFn: () => apiFetch<T>(`${path}${toQuery(params)}`),
     enabled,
   });
 }

@@ -12,9 +12,11 @@ from app.core.config import get_settings
 from app.db.session import get_db
 from app.modules.activities import router as activities
 from app.modules.activities import timeline
+from app.modules.audit import router as audit_router
 from app.modules.auth.router import router as auth_router
 from app.modules.auth.sender import SenderNotConfiguredError
 from app.modules.crm import customers, leads, organizations, reference
+from app.modules.identity import router as identity_router
 from app.modules.reports import router as reports
 from app.modules.sales import deals, stages
 
@@ -59,6 +61,8 @@ def create_app() -> FastAPI:
         activities,
         timeline,
         reports,
+        identity_router,
+        audit_router,
     ):
         app.include_router(module.router)
 
