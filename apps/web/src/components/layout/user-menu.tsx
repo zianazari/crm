@@ -8,6 +8,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuGroup,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
@@ -57,10 +58,13 @@ export function UserMenu() {
         </Avatar>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuLabel className="space-y-0.5 py-2">
-          <div className="text-sm font-semibold text-foreground">{user.full_name}</div>
-          <div className="text-xs">{ROLE_LABELS[user.role]}</div>
-        </DropdownMenuLabel>
+        {/* Base UI only allows a menu label inside a group. */}
+        <DropdownMenuGroup>
+          <DropdownMenuLabel className="space-y-0.5 py-2">
+            <div className="text-sm font-semibold text-foreground">{user.full_name}</div>
+            <div className="text-xs">{ROLE_LABELS[user.role]}</div>
+          </DropdownMenuLabel>
+        </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => void logout()}>
           <LogOut aria-hidden />
