@@ -17,9 +17,9 @@ export default function LoginPage() {
         <Card>
           <CardContent className="space-y-6 py-6">
             <div className="space-y-1">
-              <h1 className="text-xl font-bold">ورود به سامانه</h1>
+              <h1 className="text-xl font-bold">ورود</h1>
               <p className="text-sm text-muted-foreground">
-                کد یک‌بارمصرف به موبایل یا ایمیل ثبت‌شده شما ارسال می‌شود.
+                برای ورود، ایمیل یا شماره‌ی همراه ثبت‌شده‌تان را وارد کنید.
               </p>
             </div>
             <Suspense>

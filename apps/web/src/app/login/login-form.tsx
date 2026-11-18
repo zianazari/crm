@@ -2,18 +2,26 @@
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowRight, Loader2, Mail, Smartphone } from "lucide-react";
+import { ArrowRight, Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ApiError, apiFetch } from "@/lib/api";
 import { formatNumber, toAsciiDigits } from "@/lib/format";
-import { cn } from "@/lib/utils";
 
 type Channel = "sms" | "email";
 type Challenge = { challenge_id: string; expires_in: number; resend_after: number };
 
 const CODE_LENGTH = 5;
+
+/** One field for both: an "@" means email, otherwise a phone number (Persian digits,
+ * spaces, dashes and +98 are fine; the API normalizes and validates it). */
+function detectChannel(value: string): Channel | null {
+  const text = value.trim();
+  if (text.includes("@")) return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(text) ? "email" : null;
+  const digits = toAsciiDigits(text).replace(/[\s\-()+]/g, "");
+  return /^\d{10,14}$/.test(digits) ? "sms" : null;
+}
 
 function safeNext(next: string | null): string {
   // Only same-site paths, never "//evil.example" or absolute URLs.
@@ -33,7 +41,6 @@ function useCountdown() {
 export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [channel, setChannel] = useState<Channel>("sms");
   const [destination, setDestination] = useState("");
   const [challenge, setChallenge] = useState<Challenge | null>(null);
   const [code, setCode] = useState("");
@@ -52,6 +59,11 @@ export function LoginForm() {
   async function requestCode(event?: FormEvent) {
     event?.preventDefault();
     setError(null);
+    const channel = detectChannel(destination);
+    if (!channel) {
+      setError("یک ایمیل یا شماره‌ی همراه معتبر وارد کنید.");
+      return;
+    }
     setPending(true);
     try {
       const result = await apiFetch<Challenge>("/auth/otp/request", {
@@ -95,38 +107,10 @@ export function LoginForm() {
 
   if (!challenge) {
     return (
-      <form onSubmit={requestCode} className="space-y-5">
-        <div role="radiogroup" aria-label="روش دریافت کد" className="grid grid-cols-2 gap-2 rounded-lg bg-muted p-1">
-          {(
-            [
-              { value: "sms", label: "پیامک", icon: Smartphone },
-              { value: "email", label: "ایمیل", icon: Mail },
-            ] as const
-          ).map(({ value, label, icon: Icon }) => (
-            <button
-              key={value}
-              type="button"
-              role="radio"
-              aria-checked={channel === value}
-              onClick={() => {
-                setChannel(value);
-                setDestination("");
-                setError(null);
-              }}
-              className={cn(
-                "flex items-center justify-center gap-2 rounded-md py-2 text-sm font-medium text-muted-foreground transition-colors",
-                channel === value && "bg-card text-foreground shadow-sm",
-              )}
-            >
-              <Icon className="size-4" aria-hidden />
-              {label}
-            </button>
-          ))}
-        </div>
-
+      <form onSubmit={requestCode} className="space-y-5" noValidate>
         <div className="space-y-2">
           <label htmlFor="destination" className="text-sm font-medium">
-            {channel === "sms" ? "شماره موبایل" : "ایمیل"}
+            ایمیل یا شماره‌ی همراه
           </label>
           <Input
             id="destination"
@@ -134,24 +118,29 @@ export function LoginForm() {
             required
             autoFocus
             value={destination}
-            onChange={(e) => setDestination(e.target.value)}
-            type={channel === "sms" ? "tel" : "email"}
-            inputMode={channel === "sms" ? "tel" : "email"}
-            autoComplete={channel === "sms" ? "tel" : "email"}
-            placeholder={channel === "sms" ? "09xxxxxxxxx" : "name@example.com"}
+            onChange={(e) => {
+              setDestination(e.target.value);
+              setError(null);
+            }}
+            type="text"
+            inputMode="email"
+            autoComplete="username"
+            placeholder="name@example.com"
+            aria-invalid={error ? true : undefined}
+            aria-describedby={error ? "destination-error" : undefined}
             className="h-11 text-start"
           />
         </div>
 
         {error ? (
-          <p role="alert" className="text-sm text-destructive">
+          <p id="destination-error" role="alert" className="text-sm text-destructive">
             {error}
           </p>
         ) : null}
 
         <Button type="submit" className="h-11 w-full" disabled={pending || !destination.trim()}>
           {pending ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
-          دریافت کد ورود
+          ادامه
         </Button>
       </form>
     );
@@ -211,7 +200,7 @@ export function LoginForm() {
           className="flex items-center gap-1 text-muted-foreground hover:text-foreground"
         >
           <ArrowRight className="size-4" aria-hidden />
-          تغییر {channel === "sms" ? "شماره" : "ایمیل"}
+          تغییر ایمیل یا شماره
         </button>
         {resendIn > 0 ? (
           <span className="text-muted-foreground">
