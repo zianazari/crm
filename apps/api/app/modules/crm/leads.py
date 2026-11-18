@@ -8,6 +8,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.modules.auth.deps import DbDep, require_csrf
+from app.modules.automation.events import emit
 from app.modules.crm.access import AccessScope
 from app.modules.crm.common import (
     NOT_FOUND,
@@ -152,9 +153,14 @@ def create_lead(body: LeadCreate, db: DbDep, scope: ScopeDep) -> LeadOut | JSONR
         owner_id=owner.id,
         owner=owner,
         created_by_id=scope.user.id,
+        sms_consent=bool(body.sms_consent),
+        email_consent=bool(body.email_consent),
+        consent_updated_at=datetime.now(UTC) if (body.sms_consent or body.email_consent) else None,
         tags=tags,
     )
     db.add(lead)
+    db.flush()
+    emit(db, "lead.created", "lead", lead.id)
     db.commit()
     return LeadOut.model_validate(lead)
 
@@ -207,6 +213,11 @@ def update_lead(
     else:
         data["disqualify_reason"] = None
 
+    for key in ("sms_consent", "email_consent"):
+        if data.get(key) is None:
+            data.pop(key, None)
+        elif data[key] != getattr(lead, key):
+            lead.consent_updated_at = datetime.now(UTC)
     for key, value in data.items():
         setattr(lead, key, value)
     db.commit()

@@ -122,6 +122,11 @@ class Customer(UUIDPrimaryKey, Timestamps, Archivable, Base):
     created_by_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
     last_activity_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
+    # Permission to receive SMS / email from us (spec 4.1). Off until recorded.
+    sms_consent: Mapped[bool] = mapped_column(default=False, server_default="false")
+    email_consent: Mapped[bool] = mapped_column(default=False, server_default="false")
+    consent_updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
     owner: Mapped[User] = relationship(foreign_keys=[owner_id], lazy="joined")
     source: Mapped[LeadSource | None] = relationship(lazy="joined")
     tags: Mapped[list[Tag]] = relationship(secondary=customer_tags, lazy="selectin")
@@ -176,6 +181,11 @@ class Lead(UUIDPrimaryKey, Timestamps, Archivable, Base):
     )
     disqualify_reason: Mapped[str | None] = mapped_column(String(300))
     last_contacted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    # Permission to receive SMS / email from us (spec 4.1). Off until recorded.
+    sms_consent: Mapped[bool] = mapped_column(default=False, server_default="false")
+    email_consent: Mapped[bool] = mapped_column(default=False, server_default="false")
+    consent_updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     converted_customer_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("customers.id"), index=True
     )

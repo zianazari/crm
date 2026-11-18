@@ -7,6 +7,7 @@ from sqlalchemy import func, select
 
 from app.modules.audit.service import audit
 from app.modules.auth.deps import DbDep, require_csrf
+from app.modules.automation.events import emit
 from app.modules.crm.access import AccessScope
 from app.modules.crm.common import NOT_FOUND, ScopeDep, unprocessable
 from app.modules.sales.deals import record_history
@@ -94,6 +95,13 @@ def deactivate_stage(
             deal.stage_id, deal.stage = target.id, target
             deal.version += 1
             record_history(db, deal, scope, stage.id, DealStatus.OPEN, "غیرفعال‌شدن مرحله")
+            emit(
+                db,
+                "deal.stage_entered",
+                "deal",
+                deal.id,
+                {"stage_id": str(target.id), "from_stage_id": str(stage.id)},
+            )
     remaining = db.scalar(
         select(func.count())
         .select_from(Stage)
