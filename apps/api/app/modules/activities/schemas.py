@@ -50,6 +50,8 @@ class ActivityOut(BaseModel):
     lead: LinkRef | None = None
     customer: LinkRef | None = None
     deal: LinkRef | None = None
+    # The team-queue task this activity came from, if any.
+    team_task_id: uuid.UUID | None = None
     overdue: bool = False
 
 

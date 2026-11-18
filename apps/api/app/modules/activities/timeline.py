@@ -26,12 +26,14 @@ from app.modules.activities.schemas import (
 from app.modules.activities.service import out, resolve_links, today, touch_records
 from app.modules.auth.deps import DbDep, require_csrf
 from app.modules.crm.access import AccessScope
-from app.modules.crm.common import NOT_FOUND, ScopeDep, unprocessable
+from app.modules.crm.common import NOT_FOUND, ScopeDep, require_sales_access, unprocessable
 from app.modules.crm.models import Customer, Lead
 from app.modules.crm.schemas import UserRef
 from app.modules.sales.models import Deal, DealHistory, DealStatus, Payment, PaymentKind
 
-router = APIRouter(tags=["timeline"], dependencies=[Depends(require_csrf)])
+router = APIRouter(
+    tags=["timeline"], dependencies=[Depends(require_csrf), Depends(require_sales_access)]
+)
 
 STATUS_TITLES = {DealStatus.WON: "فروش انجام شد", DealStatus.LOST: "به نتیجه نرسید"}
 

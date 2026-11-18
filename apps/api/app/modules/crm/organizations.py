@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 
 from app.modules.auth.deps import DbDep, require_csrf
-from app.modules.crm.common import NOT_FOUND, ScopeDep, paginate
+from app.modules.crm.common import NOT_FOUND, ScopeDep, paginate, require_sales_access
 from app.modules.crm.customers import view as customer_view
 from app.modules.crm.models import Organization
 from app.modules.crm.schemas import (
@@ -17,7 +17,9 @@ from app.modules.crm.schemas import (
 )
 
 router = APIRouter(
-    prefix="/organizations", tags=["organizations"], dependencies=[Depends(require_csrf)]
+    prefix="/organizations",
+    tags=["organizations"],
+    dependencies=[Depends(require_csrf), Depends(require_sales_access)],
 )
 
 

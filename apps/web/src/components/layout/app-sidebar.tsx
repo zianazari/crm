@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { Suspense, useSyncExternalStore } from "react";
+import { Suspense } from "react";
 import { usePathname } from "next/navigation";
 
 import { formatNumber } from "@/lib/format";
-import { canManage, useMe, useWorkload } from "@/lib/queries";
+import { canManage, useMe, useQueueCount, useWorkload } from "@/lib/queries";
+import { useHydrated } from "@/lib/use-hydrated";
 import { cn } from "@/lib/utils";
 import { mainNav, secondaryNav, type NavItem } from "@/lib/navigation";
 
@@ -26,7 +27,17 @@ export function Logo() {
   );
 }
 
-function NavLink({ item, active, badge }: { item: NavItem; active: boolean; badge?: number }) {
+function NavLink({
+  item,
+  active,
+  badge,
+  badgeLabel,
+}: {
+  item: NavItem;
+  active: boolean;
+  badge?: number;
+  badgeLabel?: string;
+}) {
   const Icon = item.icon;
   return (
     <Link
@@ -43,14 +54,12 @@ function NavLink({ item, active, badge }: { item: NavItem; active: boolean; badg
       {badge ? (
         <span className="ms-auto rounded-full bg-primary px-1.5 text-xs font-medium text-primary-foreground">
           {formatNumber(badge)}
-          <span className="sr-only"> کار امروز و معوق</span>
+          <span className="sr-only"> {badgeLabel}</span>
         </span>
       ) : null}
     </Link>
   );
 }
-
-const noopSubscribe = () => () => {};
 
 function NavList({ pathname, onNavigate }: { pathname: string | null; onNavigate?: () => void }) {
   const isActive = (href: string) =>
@@ -60,18 +69,24 @@ function NavList({ pathname, onNavigate }: { pathname: string | null; onNavigate
   const { data: me } = useMe();
   // Role-based items appear after hydration: this subtree can hydrate after the user is
   // already loaded, and the server rendered it without them.
-  const hydrated = useSyncExternalStore(noopSubscribe, () => true, () => false);
+  const hydrated = useHydrated();
   const manager = hydrated && canManage(me?.role);
+  const finance = hydrated && Boolean(me?.finance_member);
+  const queue = hydrated && Boolean(me?.queue_team_ids.length);
+  const { data: queueCount } = useQueueCount(queue);
+  const visible = (item: NavItem) =>
+    (!item.managersOnly || manager) && (!item.sales || !finance) && (!item.queue || queue);
 
   return (
     <div className="flex flex-1 flex-col gap-6" onClick={onNavigate}>
       <nav aria-label="منوی اصلی" className="flex flex-1 flex-col gap-1 px-3">
-        {mainNav.filter((item) => !item.managersOnly || manager).map((item) => (
+        {mainNav.filter(visible).map((item) => (
           <NavLink
             key={item.href}
             item={item}
             active={isActive(item.href)}
-            badge={item.href === "/activities" ? due : undefined}
+            badge={item.href === "/activities" ? due : item.href === "/team-queue" ? queueCount : undefined}
+            badgeLabel={item.href === "/team-queue" ? "کار در صف" : "کار امروز و معوق"}
           />
         ))}
       </nav>

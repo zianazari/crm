@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlarmClock, Bell, CalendarCheck, CheckCheck, Loader2, Sun, UserPlus, type LucideIcon } from "lucide-react";
+import { AlarmClock, Bell, CalendarCheck, CheckCheck, Loader2, Sun, UserPlus, type LucideIcon, Inbox } from "lucide-react";
 import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
@@ -12,7 +12,7 @@ import { apiFetch } from "@/lib/api";
 import { formatNumber } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
-type Kind = "activity_reminder" | "activity_assigned" | "record_assigned" | "daily_digest";
+type Kind = "activity_reminder" | "activity_assigned" | "record_assigned" | "daily_digest" | "team_task";
 
 type Notification = {
   id: string;
@@ -31,6 +31,7 @@ const ICONS: Record<Kind, LucideIcon> = {
   activity_assigned: CalendarCheck,
   record_assigned: UserPlus,
   daily_digest: Sun,
+  team_task: Inbox,
 };
 
 const KEY = ["notifications"] as const;

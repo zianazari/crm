@@ -22,6 +22,7 @@ from app.modules.crm.common import (
     duplicate_response,
     find_duplicates,
     paginate,
+    require_sales_access,
     resolve_owner,
     resolve_tags,
     restore,
@@ -49,7 +50,11 @@ from app.modules.crm.schemas import (
     Page,
 )
 
-router = APIRouter(prefix="/leads", tags=["leads"], dependencies=[Depends(require_csrf)])
+router = APIRouter(
+    prefix="/leads",
+    tags=["leads"],
+    dependencies=[Depends(require_csrf), Depends(require_sales_access)],
+)
 
 _CONFLICT: dict[int | str, dict[str, Any]] = {
     status.HTTP_409_CONFLICT: {"model": DuplicateConflict}

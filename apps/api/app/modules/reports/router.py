@@ -44,13 +44,17 @@ from app.modules.activities.schemas import ActivityBrief
 from app.modules.activities.service import next_activities, today
 from app.modules.auth.deps import DbDep, require_csrf
 from app.modules.crm.access import AccessScope
-from app.modules.crm.common import ScopeDep, day_bounds, unprocessable
+from app.modules.crm.common import ScopeDep, day_bounds, require_sales_access, unprocessable
 from app.modules.crm.models import Customer, Lead, LeadSource
 from app.modules.crm.schemas import UserRef
 from app.modules.identity.models import Team, User
 from app.modules.sales.models import Deal, DealStatus, Payment, PaymentKind, Stage
 
-router = APIRouter(prefix="/reports", tags=["reports"], dependencies=[Depends(require_csrf)])
+router = APIRouter(
+    prefix="/reports",
+    tags=["reports"],
+    dependencies=[Depends(require_csrf), Depends(require_sales_access)],
+)
 
 CURRENCY = "IRT"
 

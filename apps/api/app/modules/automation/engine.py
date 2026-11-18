@@ -28,6 +28,7 @@ from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
 from app.modules.activities.models import OPEN_STATUSES, Activity, ActivityEvent, ActivityType
+from app.modules.activities.team_tasks import QueueError, queue_task
 from app.modules.automation.events import emit
 from app.modules.automation.graph import DELAY_UNITS, subject_type
 from app.modules.automation.models import (
@@ -182,6 +183,29 @@ def run_action(
     kind, config = step["kind"], step["config"]
     author = rule.created_by
     tz = ZoneInfo(get_settings().timezone)
+
+    if kind == "create_activity" and config.get("assignee") == "team":
+        team = db.get(Team, uuid.UUID(str(config["team_id"])))
+        if team is None:
+            raise ActionError("تیم انتخاب‌شده دیگر وجود ندارد.")
+        try:
+            task = queue_task(
+                db,
+                team=team,
+                type_=ActivityType(config["activity_type"]),
+                title=render(str(config["title"]), ctx),
+                description=render(str(config.get("description") or ""), ctx) or None,
+                due_date=datetime.now(tz).date()
+                + timedelta(days=int(config.get("due_in_days", 0))),
+                created_by=author,
+                lead=ctx.lead if not ctx.customer else None,
+                customer=ctx.customer,
+                deal=ctx.deal,
+                source={"automation": str(rule.id), "execution": str(execution.id)},
+            )
+        except QueueError as exc:
+            raise ActionError(str(exc)) from exc
+        return {"result": "done", "team_task_id": str(task.id), "team": team.name}
 
     if kind == "create_activity":
         assignee: User | None

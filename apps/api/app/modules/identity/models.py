@@ -19,10 +19,22 @@ class Role(enum.StrEnum):
     SALES_REP = "sales_rep"
 
 
+class TeamKind(enum.StrEnum):
+    SALES = "sales"
+    # An operational team (spec section 5): its members work at rep level on the team's
+    # queue and the activities given to them, and see only what those tasks need.
+    FINANCE = "finance"
+
+
 class Team(UUIDPrimaryKey, Timestamps, Base):
     __tablename__ = "teams"
 
     name: Mapped[str] = mapped_column(String(120), unique=True)
+    kind: Mapped[TeamKind] = mapped_column(
+        Enum(TeamKind, name="team_kind", values_callable=lambda e: [m.value for m in e]),
+        default=TeamKind.SALES,
+        server_default=TeamKind.SALES.value,
+    )
     is_active: Mapped[bool] = mapped_column(default=True)
     # A manager runs exactly one team (spec section 0, decision 4), hence unique.
     manager_id: Mapped[uuid.UUID | None] = mapped_column(

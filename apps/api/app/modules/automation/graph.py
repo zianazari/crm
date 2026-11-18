@@ -80,10 +80,12 @@ def _check_node(node: dict[str, Any]) -> list[str]:
         due = config.get("due_in_days", 0)
         if not isinstance(due, int) or not 0 <= due <= 365:
             errors.append("موعد فعالیت باید بین ۰ و ۳۶۵ روز بعد باشد.")
-        if config.get("assignee") not in {"record_owner", "user"}:
+        if config.get("assignee") not in {"record_owner", "user", "team"}:
             errors.append("مسئول انجام را انتخاب کنید.")
         if config.get("assignee") == "user" and not config.get("user_id"):
             errors.append("کاربر مسئول را انتخاب کنید.")
+        if config.get("assignee") == "team" and not config.get("team_id"):
+            errors.append("تیمی را که کار به صف آن می‌رود انتخاب کنید.")
     elif kind == "notify":
         if config.get("recipient") not in {"record_owner", "owner_manager", "user"}:
             errors.append("گیرنده اعلان را انتخاب کنید.")

@@ -5,6 +5,7 @@ from typing import Any
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.modules.identity.models import Team, TeamKind
 from app.modules.sales.models import Stage
 
 TEMPLATES: dict[str, dict[str, Any]] = {
@@ -71,7 +72,7 @@ TEMPLATES: dict[str, dict[str, Any]] = {
     "finance_follow_up": {
         "name": "پیگیری مالی پس از توافق نهایی",
         "description": (
-            "با ورود فروش به «توافق نهایی»، فعالیت پیگیری مالی برای مسئول مالی و پیامک به مشتری."
+            "با ورود فروش به «توافق نهایی»، پیگیری مالی به صف تیم مالی می‌رود و مشتری پیامک می‌گیرد."
         ),
         "steps": [
             ("trigger", {"event": "deal.stage_entered"}),
@@ -82,8 +83,8 @@ TEMPLATES: dict[str, dict[str, Any]] = {
                     "activity_type": "task",
                     "title": "پیگیری مالی {deal}",
                     "due_in_days": 1,
-                    "assignee": "user",
-                    "user_id": "",
+                    "assignee": "team",
+                    "team_id": "team:finance",
                 },
             ),
             (
@@ -98,6 +99,11 @@ TEMPLATES: dict[str, dict[str, Any]] = {
 def build_template(db: Session, key: str) -> dict[str, Any]:
     """Turns a template into a builder graph; stage names are resolved to ids here."""
     stages = {s.name: str(s.id) for s in db.scalars(select(Stage).where(Stage.is_active.is_(True)))}
+    finance_team = db.scalar(
+        select(Team.id)
+        .where(Team.kind == TeamKind.FINANCE, Team.is_active.is_(True))
+        .order_by(Team.name)
+    )
     nodes, edges = [], []
     previous = None
     for index, (kind, config) in enumerate(TEMPLATES[key]["steps"]):
@@ -105,6 +111,9 @@ def build_template(db: Session, key: str) -> dict[str, Any]:
         if kind == "condition":
             config["values"] = [stages.get(v.removeprefix("stage:"), "") for v in config["values"]]
             config["values"] = [v for v in config["values"] if v]
+        if config.get("team_id") == "team:finance":
+            # The first active finance team, if there is one; otherwise the block asks.
+            config["team_id"] = str(finance_team) if finance_team else ""
         node_id = f"n{index + 1}"
         nodes.append(
             {"id": node_id, "kind": kind, "config": config, "position": {"x": 0, "y": index * 160}}

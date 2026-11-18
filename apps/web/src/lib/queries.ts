@@ -109,6 +109,16 @@ export function canManage(role: CurrentUser["role"] | undefined): boolean {
   return role === "admin" || role === "sales_manager";
 }
 
+/** Open tasks waiting in the user's team queues (for the menu badge). */
+export function useQueueCount(enabled: boolean) {
+  return useQuery({
+    queryKey: ["team-tasks", "count"],
+    queryFn: async () => (await apiFetch<Page<unknown>>("/team-tasks?page_size=1")).total,
+    enabled,
+    refetchInterval: 60_000,
+  });
+}
+
 export function useStages() {
   return useQuery({ queryKey: ["stages"], queryFn: () => apiFetch<Stage[]>("/stages"), staleTime: 60_000 });
 }

@@ -20,7 +20,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base, Timestamps, UUIDPrimaryKey
 from app.modules.crm.models import Customer, Lead
-from app.modules.identity.models import User
+from app.modules.identity.models import Team, User
 from app.modules.sales.models import Deal
 
 
@@ -94,6 +94,8 @@ class Activity(UUIDPrimaryKey, Timestamps, Base):
     lead_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("leads.id"), index=True)
     customer_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("customers.id"), index=True)
     deal_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("deals.id"), index=True)
+    # Set when the activity came from a team queue (claimed or assigned).
+    team_task_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("team_tasks.id"), unique=True)
     version: Mapped[int] = mapped_column(default=1)
 
     owner: Mapped[User] = relationship(foreign_keys=[owner_id], lazy="joined")
@@ -134,3 +136,58 @@ class Note(UUIDPrimaryKey, Timestamps, Base):
     deal_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("deals.id"), index=True)
 
     author: Mapped[User] = relationship(lazy="joined")
+
+
+class TeamTaskStatus(enum.StrEnum):
+    OPEN = "open"  # waiting in the team queue, no one responsible yet
+    ASSIGNED = "assigned"  # claimed by a member or assigned by the manager
+    CANCELED = "canceled"
+
+
+class TeamTask(UUIDPrimaryKey, Timestamps, Base):
+    """Work given to a team rather than a person (spec 4.6, TeamTaskAssignment in 9).
+
+    It waits in the team's queue until one member claims it or the team manager assigns
+    it; then it becomes an ordinary activity of that person. Claiming is a conditional
+    update on ``status``, so two members can never both get it.
+    """
+
+    __tablename__ = "team_tasks"
+    __table_args__ = (
+        CheckConstraint(
+            "status <> 'assigned' OR (assigned_to_id IS NOT NULL AND assigned_at IS NOT NULL)",
+            name="assigned_has_owner",
+        ),
+        CheckConstraint(
+            "status <> 'canceled' OR cancel_reason IS NOT NULL", name="canceled_has_reason"
+        ),
+    )
+
+    team_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("teams.id"), index=True)
+    type: Mapped[ActivityType] = mapped_column(_enum(ActivityType, "activity_type"))
+    title: Mapped[str] = mapped_column(String(200))
+    description: Mapped[str | None] = mapped_column(Text)
+    due_date: Mapped[date] = mapped_column(Date)
+    priority: Mapped[Priority] = mapped_column(
+        _enum(Priority, "activity_priority"), default=Priority.NORMAL
+    )
+    lead_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("leads.id"))
+    customer_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("customers.id"))
+    deal_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("deals.id"), index=True)
+    created_by_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
+    # Where it came from, e.g. {"automation": rule id, "execution": id}.
+    source: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
+    status: Mapped[TeamTaskStatus] = mapped_column(
+        _enum(TeamTaskStatus, "team_task_status"), default=TeamTaskStatus.OPEN, index=True
+    )
+    assigned_to_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id"))
+    assigned_by_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id"))
+    assigned_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    cancel_reason: Mapped[str | None] = mapped_column(String(300))
+
+    team: Mapped[Team] = relationship(lazy="joined")
+    created_by: Mapped[User] = relationship(foreign_keys=[created_by_id], lazy="joined")
+    assigned_to: Mapped[User | None] = relationship(foreign_keys=[assigned_to_id], lazy="joined")
+    lead: Mapped[Lead | None] = relationship(lazy="selectin")
+    customer: Mapped[Customer | None] = relationship(lazy="selectin")
+    deal: Mapped[Deal | None] = relationship(lazy="selectin")

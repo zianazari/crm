@@ -31,3 +31,7 @@ class UserOut(BaseModel):
     team_id: uuid.UUID | None
     mobile: str | None
     email: str | None
+    # A rep in a finance team: activities and team queue only (spec section 5).
+    finance_member: bool = False
+    # Team queues this user may open (member, the team's manager, or admin).
+    queue_team_ids: list[uuid.UUID] = []

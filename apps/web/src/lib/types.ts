@@ -225,6 +225,8 @@ export type Activity = {
   lead: LinkRef | null;
   customer: LinkRef | null;
   deal: LinkRef | null;
+  /** Set when the activity came from a team queue. */
+  team_task_id: string | null;
   overdue: boolean;
 };
 
@@ -285,9 +287,13 @@ export type AdminUser = {
   manages_team: Ref | null;
 };
 
+export type TeamKind = "sales" | "finance";
+export const TEAM_KIND_LABELS: Record<TeamKind, string> = { sales: "فروش", finance: "مالی (عملیاتی)" };
+
 export type Team = {
   id: string;
   name: string;
+  kind: TeamKind;
   is_active: boolean;
   manager: UserRef | null;
   member_count: number;

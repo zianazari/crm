@@ -20,6 +20,7 @@ class NotificationKind(enum.StrEnum):
     ACTIVITY_ASSIGNED = "activity_assigned"
     RECORD_ASSIGNED = "record_assigned"
     DAILY_DIGEST = "daily_digest"
+    TEAM_TASK = "team_task"  # new work in a team queue
 
 
 class Notification(UUIDPrimaryKey, Base):

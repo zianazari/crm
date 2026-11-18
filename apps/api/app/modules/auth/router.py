@@ -3,6 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from fastapi.responses import JSONResponse
 
+from app.modules.activities.team_tasks import queue_team_ids
 from app.modules.audit.service import audit
 from app.modules.auth.deps import (
     ACCESS_COOKIE,
@@ -21,6 +22,7 @@ from app.modules.auth.otp import InvalidDestinationError, OtpService, RateLimite
 from app.modules.auth.schemas import OtpRequestIn, OtpRequestOut, OtpVerifyIn, UserOut
 from app.modules.auth.sessions import InvalidRefreshTokenError, SessionService
 from app.modules.auth.tokens import InvalidTokenError, decode_access_token
+from app.modules.crm.access import build_scope
 from app.modules.identity.models import User
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -137,5 +139,8 @@ def logout(
 
 
 @router.get("/me")
-def me(current: CurrentUserDep) -> UserOut:
-    return UserOut.model_validate(current.user)
+def me(current: CurrentUserDep, db: DbDep) -> UserOut:
+    result = UserOut.model_validate(current.user)
+    result.finance_member = build_scope(db, current.user).is_finance
+    result.queue_team_ids = queue_team_ids(db, current.user)
+    return result

@@ -13,7 +13,7 @@ from app.core.config import get_settings
 from app.core.normalize import normalize_email, normalize_mobile
 from app.modules.auth.deps import CurrentUserDep, DbDep
 from app.modules.automation.events import emit
-from app.modules.crm.access import AccessScope, build_scope
+from app.modules.crm.access import FINANCE_ONLY, AccessScope, build_scope
 from app.modules.crm.models import Customer, Lead, LeadSource, OwnershipHistory, Tag
 from app.modules.crm.schemas import DuplicateConflict, DuplicateMatch, UserRef
 from app.modules.identity.models import User
@@ -25,6 +25,14 @@ def get_scope(current: CurrentUserDep, db: DbDep) -> AccessScope:
 
 
 ScopeDep = Annotated[AccessScope, Depends(get_scope)]
+
+
+def require_sales_access(scope: ScopeDep) -> None:
+    """Router dependency for sales data (leads, customers, deals, reports, notes):
+    finance team members do not get these views (spec section 5)."""
+    if scope.is_finance:
+        raise FINANCE_ONLY
+
 
 NOT_FOUND = HTTPException(status.HTTP_404_NOT_FOUND, detail="پرونده پیدا نشد.")
 

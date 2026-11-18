@@ -22,6 +22,7 @@ import { ActivityFormDialog } from "@/components/crm/activity-form-dialog";
 import { Field, Owner } from "@/components/crm/bits";
 import { JalaliDateInput } from "@/components/crm/jalali-date-input";
 import { ReasonDialog } from "@/components/crm/reason-dialog";
+import { TaskContextButton } from "@/components/crm/team-task-parts";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -43,7 +44,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ApiError, apiFetch } from "@/lib/api";
 import { formatNumber } from "@/lib/format";
 import { addDays, dayLabel, formatTime, todayIso } from "@/lib/jalali";
-import { keys } from "@/lib/queries";
+import { keys, useMe } from "@/lib/queries";
 import { ACTIVITY_TYPE_LABELS, type Activity, type ActivityBrief, type ActivityType } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -144,6 +145,7 @@ export function ActivityItem({ activity, showLinks = true }: { activity: Activit
           <Owner user={activity.owner} />
           {showLinks ? <Links activity={activity} /> : null}
         </p>
+        {activity.team_task_id ? <TaskContextButton taskId={activity.team_task_id} /> : null}
         {activity.description ? <p className="text-muted-foreground">{activity.description}</p> : null}
       </div>
       {open ? (
@@ -179,6 +181,7 @@ export function ActivityItem({ activity, showLinks = true }: { activity: Activit
 }
 
 function Links({ activity }: { activity: Activity }) {
+  const { data: me } = useMe();
   const link = activity.deal
     ? { href: `/deals/${activity.deal.id}`, label: activity.deal.name }
     : activity.customer
@@ -187,6 +190,10 @@ function Links({ activity }: { activity: Activity }) {
         ? { href: `/leads/${activity.lead.id}`, label: activity.lead.name }
         : null;
   if (!link) return null;
+  // Finance team members do not open sales records; the name is enough for context.
+  if (me?.finance_member) {
+    return <span>{activity.deal && activity.customer ? `${activity.customer.name} — ${link.label}` : link.label}</span>;
+  }
   return (
     <Link href={link.href} className="text-primary hover:underline" onClick={(e) => e.stopPropagation()}>
       {activity.deal && activity.customer ? `${activity.customer.name} — ` : ""}
