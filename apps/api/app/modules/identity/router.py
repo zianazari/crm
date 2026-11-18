@@ -9,6 +9,7 @@
 """
 
 import uuid
+from datetime import UTC, datetime
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
@@ -31,6 +32,8 @@ from app.modules.crm.common import ScopeDep, unprocessable
 from app.modules.crm.models import Customer, Lead, LeadStatus, OwnershipHistory
 from app.modules.crm.schemas import UserRef
 from app.modules.identity.models import Role, Team, User
+from app.modules.notifications.models import NotificationKind
+from app.modules.notifications.service import fa, notify
 from app.modules.sales.models import Deal, DealStatus
 
 router = APIRouter(tags=["administration"], dependencies=[Depends(require_csrf)])
@@ -312,6 +315,19 @@ def deactivate_user(
 
     if target is not None:
         _transfer(db, scope, user, target)
+        if items.total:
+            notify(
+                db,
+                target.id,
+                NotificationKind.RECORD_ASSIGNED,
+                f"کارهای باز {user.full_name} به شما منتقل شد",
+                f"transfer:{user.id}:{target.id}:{datetime.now(UTC).isoformat()}",
+                body=(
+                    f"{fa(items.leads)} مشتری احتمالی، {fa(items.customers)} مشتری، "
+                    f"{fa(items.deals)} فروش باز و {fa(items.activities)} فعالیت"
+                ),
+                link="/activities",
+            )
     user.is_active = False
     db.execute(update(Team).where(Team.manager_id == user.id).values(manager_id=None))
     audit(

@@ -81,6 +81,9 @@ class Activity(UUIDPrimaryKey, Timestamps, Base):
         _enum(Priority, "activity_priority"), default=Priority.NORMAL
     )
     reminder_minutes: Mapped[int | None]
+    # When the in-app reminder is due, and when it was sent (reset on reschedule).
+    remind_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
+    reminded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     status: Mapped[ActivityStatus] = mapped_column(
         _enum(ActivityStatus, "activity_status"), default=ActivityStatus.PENDING, index=True
     )

@@ -16,6 +16,7 @@ from app.modules.crm.access import AccessScope, build_scope
 from app.modules.crm.models import Customer, Lead, LeadSource, OwnershipHistory, Tag
 from app.modules.crm.schemas import DuplicateConflict, DuplicateMatch, UserRef
 from app.modules.identity.models import User
+from app.modules.notifications.service import record_assigned
 
 
 def get_scope(current: CurrentUserDep, db: DbDep) -> AccessScope:
@@ -178,6 +179,11 @@ def change_owner(
     )
     record.owner_id = new_owner.id
     record.owner = new_owner
+    if new_owner.id != scope.user.id:
+        name = str(getattr(record, "full_name", None) or getattr(record, "title", ""))
+        record_assigned(
+            db, new_owner.id, scope.user.full_name, entity_type, record.id, name, reason
+        )
 
 
 def archive(scope: AccessScope, record: OwnedRecord) -> None:
