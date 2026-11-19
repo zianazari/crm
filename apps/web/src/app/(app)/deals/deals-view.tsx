@@ -19,6 +19,7 @@ import { formatDate, formatToman } from "@/lib/format";
 import { canManage, useAssignableUsers, useBoard, useDeals, useMe, useStages } from "@/lib/queries";
 import type { DealStatus } from "@/lib/types";
 import { useDebounced } from "@/lib/use-debounced";
+import { useHydrated } from "@/lib/use-hydrated";
 import { cn } from "@/lib/utils";
 
 type View = "board" | "list";
@@ -38,7 +39,9 @@ export function DealsView() {
   const search = useDebounced(q.trim());
   const { data: me } = useMe();
   const { data: users = [] } = useAssignableUsers();
-  const manager = canManage(me?.role);
+  const hydrated = useHydrated();
+  // Role-based controls appear after hydration, so server and client markup match.
+  const manager = hydrated && canManage(me?.role);
 
   return (
     <>

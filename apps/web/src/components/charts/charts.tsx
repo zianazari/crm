@@ -28,7 +28,7 @@ export function compactToman(value: number): string {
 
 export function Legend({ series }: { series: Pick<Series, "key" | "label" | "color">[] }) {
   return (
-    <ul className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground" aria-label="راهنما">
+    <ul className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground" aria-label="راهنما">
       {series.map((s) => (
         <li key={s.key} className="flex items-center gap-1.5">
           <span className="size-2.5 rounded-sm" style={{ background: s.color }} aria-hidden />
@@ -58,8 +58,10 @@ export function ColumnChart({
   series,
   format,
   axisFormat = format,
-  height = 220,
+  height = 260,
   caption,
+  unit,
+  columnColors,
 }: {
   labels: string[];
   series: Series[];
@@ -67,6 +69,10 @@ export function ColumnChart({
   axisFormat?: (v: number) => string;
   height?: number;
   caption: string;
+  /** Shown above the y-axis, e.g. «میلیون تومان». */
+  unit?: string;
+  /** One colour per column (single series only), e.g. a light→dark ramp over time. */
+  columnColors?: string[];
 }) {
   const [hover, setHover] = useState<number | null>(null);
   const [table, setTable] = useState(false);
@@ -78,7 +84,7 @@ export function ColumnChart({
   return (
     <figure className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        {stacked ? <Legend series={series} /> : <span />}
+        {stacked ? <Legend series={series} /> : unit ? <span className="text-sm text-muted-foreground">{unit}</span> : <span />}
         <TableToggle shown={table} onToggle={() => setTable(!table)} />
       </div>
       {totals.every((t) => t === 0) ? (
@@ -92,9 +98,9 @@ export function ColumnChart({
           rows={labels.map((label, i) => [label, ...series.map((s) => format(s.values[i] ?? 0)), ...(stacked ? [format(totals[i])] : [])])}
         />
       ) : (
-        <div className="flex gap-2 pt-3" dir="ltr">
+        <div className="flex gap-2 pt-5" dir="ltr">
           {/* y-axis */}
-          <div className="relative w-16 shrink-0 text-[11px] text-muted-foreground" style={{ height }} aria-hidden>
+          <div className="relative w-20 shrink-0 text-sm text-muted-foreground tabular-nums" style={{ height }} aria-hidden>
             {ticks.map((t) => (
               <span key={t} className="absolute end-1 -translate-y-1/2" style={{ bottom: `${(t / max) * 100}%` }} dir="rtl">
                 {axisFormat(t)}
@@ -125,7 +131,8 @@ export function ColumnChart({
                       onBlur={() => setHover(null)}
                       aria-label={`${label}: ${series.map((s) => `${s.label} ${format(s.values[i] ?? 0)}`).join("، ")}`}
                       className={cn(
-                        "flex w-full max-w-6 flex-col-reverse gap-[2px] outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+                        "flex flex-col-reverse gap-[2px] outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+                        stacked ? "w-full max-w-8" : "w-3/5 max-w-20",
                         hover !== null && hover !== i && "opacity-60",
                       )}
                       style={{ height: `${(totals[i] / max) * 100}%` }}
@@ -137,8 +144,13 @@ export function ColumnChart({
                         return (
                           <span
                             key={s.key}
-                            className={cn("block w-full", top && "rounded-t")}
-                            style={{ background: s.color, flexGrow: v, flexBasis: 0, minHeight: 2 }}
+                            className={cn("block w-full", top && "rounded-t-md")}
+                            style={{
+                              background: (!stacked && columnColors?.[i]) || s.color,
+                              flexGrow: v,
+                              flexBasis: 0,
+                              minHeight: 2,
+                            }}
                           />
                         );
                       })}
@@ -146,7 +158,7 @@ export function ColumnChart({
                     {hover === i ? (
                       <div
                         dir="rtl"
-                        className="pointer-events-none absolute bottom-full z-10 mb-1 min-w-36 rounded-lg border bg-popover px-3 py-2 text-xs text-popover-foreground shadow-md"
+                        className="pointer-events-none absolute bottom-full z-10 mb-1 min-w-44 rounded-lg border bg-popover px-3 py-2 text-sm text-popover-foreground shadow-md"
                       >
                         <p className="mb-1 font-semibold">{label}</p>
                         {series.map((s) => (
@@ -170,7 +182,7 @@ export function ColumnChart({
                 ))}
               </div>
             </div>
-            <div className="flex pt-1.5 text-[11px] text-muted-foreground" aria-hidden>
+            <div className="flex pt-2 text-base text-foreground/80" aria-hidden>
               {labels.map((label, i) => (
                 <span
                   key={label}
@@ -209,15 +221,15 @@ export function BarList({
     <figure>
       <ul className="space-y-3" aria-label={caption}>
         {rows.map((r) => (
-          <li key={r.key} className="grid grid-cols-[minmax(6rem,9rem)_1fr_auto] items-center gap-3 text-sm">
+          <li key={r.key} className="grid grid-cols-[minmax(6rem,9rem)_1fr_auto] items-center gap-3 text-base">
             <span className="truncate">{r.label}</span>
-            <span className="h-2.5 rounded-e bg-muted" aria-hidden>
+            <span className="h-3.5 rounded-e bg-muted" aria-hidden>
               <span
                 className="block h-full rounded-e"
                 style={{ width: `${(r.value / max) * 100}%`, minWidth: r.value ? 4 : 0, background: "var(--series-single)" }}
               />
             </span>
-            <span className="text-end text-xs text-muted-foreground" title={r.detail}>
+            <span className="text-end text-sm text-muted-foreground tabular-nums" title={r.detail}>
               {format(r.value)}
               {r.detail ? <span className="block">{r.detail}</span> : null}
             </span>

@@ -15,6 +15,16 @@ export function formatToman(value: number): string {
   return `${formatNumber(value)} تومان`;
 }
 
+/** Headline amounts as in the design: «۲۴۸ میلیون تومان», «۱۲٫۵ میلیارد تومان». The
+ * exact amount goes in a tooltip or table next to it. */
+export function formatTomanShort(value: number): string {
+  const sign = value < 0 ? "−" : "";
+  const v = Math.abs(value);
+  if (v < 1e6) return `${sign}${formatToman(v)}`;
+  if (v < 1e10) return `${sign}${formatNumber(Math.round(v / 1e6))} میلیون تومان`;
+  return `${sign}${formatNumber(Math.round(v / 1e8) / 10)} میلیارد تومان`;
+}
+
 const persianDigits = "۰۱۲۳۴۵۶۷۸۹";
 const arabicDigits = "٠١٢٣٤٥٦٧٨٩";
 

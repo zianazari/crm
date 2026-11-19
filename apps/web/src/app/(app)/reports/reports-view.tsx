@@ -23,6 +23,7 @@ import {
   type ReportSummary,
 } from "@/lib/queries";
 import type { UserRef } from "@/lib/types";
+import { useHydrated } from "@/lib/use-hydrated";
 import { cn } from "@/lib/utils";
 
 const REPORTS = [
@@ -43,6 +44,7 @@ export function ReportsView({ today }: { today: string }) {
   const [ownerId, setOwnerId] = useState("");
   const [sourceId, setSourceId] = useState("");
   const { data: me } = useMe();
+  const hydrated = useHydrated();
   const { data: users = [] } = useAssignableUsers();
   const { data: sources = [] } = useSources();
   const filters: ListParams = {
@@ -83,7 +85,7 @@ export function ReportsView({ today }: { today: string }) {
         <div className="min-w-0 space-y-4">
           <div className="flex flex-wrap items-center gap-2">
             <PeriodPicker value={period} onChange={setPeriod} today={today} />
-            {canManage(me?.role) ? (
+            {hydrated && canManage(me?.role) ? (
               <NativeSelect aria-label="کارشناس" value={ownerId} onChange={(e) => setOwnerId(e.target.value)}>
                 <NativeSelectOption value="">همه کارشناسان</NativeSelectOption>
                 {users.map((u) => (
