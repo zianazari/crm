@@ -33,6 +33,9 @@ MAX_SELECTED = 5000
 class ContactRef(BaseModel):
     type: ContactType
     id: uuid.UUID
+    # Display only, so the chosen list reads well when the draft is reopened; the
+    # recipient's name always comes from the record itself.
+    name: str | None = Field(default=None, max_length=160)
 
 
 BOTH: tuple[ContactType, ...] = ("lead", "customer")
