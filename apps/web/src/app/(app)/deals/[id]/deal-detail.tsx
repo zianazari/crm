@@ -7,7 +7,9 @@ import {
   Banknote,
   Building2,
   CalendarDays,
+  Circle,
   CircleCheck,
+  CircleDot,
   CircleX,
   Pencil,
   RotateCcw,
@@ -216,6 +218,16 @@ function FullDeal({ deal }: { deal: DealFull }) {
   );
 }
 
+const ARROW = 14; // px depth of each segment's point
+
+/** One segment of the stage strip. Stages run right to left, so each segment points
+ * left and, except the first, has a notch on its right where the previous one fits. */
+function arrowShape(first: boolean, last: boolean): string {
+  const tip = last ? ["0 0", "0 100%"] : [`${ARROW}px 0`, "0 50%", `${ARROW}px 100%`];
+  const notch = first ? [] : [`calc(100% - ${ARROW}px) 50%`];
+  return `polygon(100% 0, ${tip.join(", ")}, 100% 100%${notch.length ? `, ${notch[0]}` : ""})`;
+}
+
 /** Pipeline progress as in the design; clicking a stage moves an open deal there. */
 function StageStrip({ deal }: { deal: DealFull }) {
   const { data: stages = [] } = useStages();
@@ -227,40 +239,50 @@ function StageStrip({ deal }: { deal: DealFull }) {
   return (
     <Card>
       <CardContent className="flex flex-wrap items-center justify-between gap-4">
-        <ol className="flex flex-wrap items-center gap-1" aria-label="مراحل فروش">
+        <ol className="flex min-w-0 max-w-full overflow-x-auto rounded-xl" aria-label="مراحل فروش">
           {stages.map((stage: Stage, i) => {
             const done = deal.status !== "open" || i < currentIndex;
             const current = deal.status === "open" && i === currentIndex;
+            const last = i === stages.length - 1 && deal.status === "open";
+            const Icon = current ? CircleDot : done ? CircleCheck : Circle;
             return (
-              <li key={stage.id}>
+              <li key={stage.id} className="shrink-0" style={i ? { marginInlineStart: -(ARROW - 3) } : undefined}>
                 <button
                   type="button"
                   disabled={!movable || current}
                   onClick={() => void move(deal, stage)}
                   aria-current={current ? "step" : undefined}
+                  aria-label={`${stage.name}${current ? " (مرحله فعلی)" : done ? " (گذشته)" : ""}`}
+                  style={{ clipPath: arrowShape(i === 0, last) }}
                   className={cn(
-                    "flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm transition-colors",
-                    current && "border-primary bg-primary text-primary-foreground",
-                    done && !current && "border-transparent bg-accent text-accent-foreground",
-                    !done && !current && "text-muted-foreground",
-                    movable && !current && "hover:border-primary",
+                    "flex h-11 items-center gap-2 whitespace-nowrap text-base font-medium transition-colors",
+                    i === 0 ? "ps-4" : "ps-7",
+                    last ? "pe-4" : "pe-6",
+                    current && "bg-primary text-primary-foreground",
+                    done && !current && "bg-accent text-accent-foreground",
+                    !done && !current && "bg-muted text-muted-foreground",
+                    movable && !current && "hover:brightness-95 dark:hover:brightness-125",
                   )}
                 >
-                  {done && !current ? <CircleCheck className="size-4" aria-hidden /> : null}
+                  <Icon
+                    className={cn("size-5", done && !current && "fill-primary text-accent")}
+                    aria-hidden
+                  />
                   {stage.name}
                 </button>
               </li>
             );
           })}
           {deal.status !== "open" ? (
-            <li>
+            <li className="shrink-0" style={{ marginInlineStart: -(ARROW - 3) }}>
               <span
+                style={{ clipPath: arrowShape(false, true) }}
                 className={cn(
-                  "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium",
+                  "flex h-11 items-center gap-2 whitespace-nowrap ps-7 pe-4 text-base font-semibold",
                   deal.status === "won" ? "bg-primary text-primary-foreground" : "bg-destructive text-white dark:text-background",
                 )}
               >
-                {deal.status === "won" ? <CircleCheck className="size-4" aria-hidden /> : <CircleX className="size-4" aria-hidden />}
+                {deal.status === "won" ? <CircleCheck className="size-5" aria-hidden /> : <CircleX className="size-5" aria-hidden />}
                 {DEAL_STATUS_LABELS[deal.status]}
               </span>
             </li>

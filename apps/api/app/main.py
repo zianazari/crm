@@ -22,6 +22,7 @@ from app.modules.booking import router as booking
 from app.modules.campaigns import direct
 from app.modules.campaigns import router as campaigns
 from app.modules.crm import customers, leads, organizations, reference
+from app.modules.identity import avatars
 from app.modules.identity import router as identity_router
 from app.modules.messaging import router as messaging
 from app.modules.notifications import router as notifications
@@ -63,6 +64,7 @@ def create_app() -> FastAPI:
         return JSONResponse({"detail": "ارسال کد ورود هنوز پیکربندی نشده است."}, status_code=503)
 
     app.include_router(auth_router)
+    app.include_router(avatars.router)
     for module in (
         leads,
         customers,

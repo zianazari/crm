@@ -6,8 +6,9 @@ they never share this table.
 
 import enum
 import uuid
+from datetime import datetime
 
-from sqlalchemy import CheckConstraint, Enum, ForeignKey, String
+from sqlalchemy import CheckConstraint, DateTime, Enum, ForeignKey, LargeBinary, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base, Timestamps, UUIDPrimaryKey
@@ -62,5 +63,24 @@ class User(UUIDPrimaryKey, Timestamps, Base):
         ForeignKey("teams.id", ondelete="SET NULL"), index=True
     )
     is_active: Mapped[bool] = mapped_column(default=True)
+    # Bumped on every new profile photo (none: no photo); part of the photo URL, so a
+    # browser can cache each version for good.
+    avatar_version: Mapped[int | None]
 
     team: Mapped[Team | None] = relationship(back_populates="members", foreign_keys=[team_id])
+
+
+class UserAvatar(Base):
+    """A profile photo: already a small square WebP/JPEG/PNG (the browser crops and
+    shrinks it before upload), so it is kept in the database rather than file storage."""
+
+    __tablename__ = "user_avatars"
+
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
+    )
+    content: Mapped[bytes] = mapped_column(LargeBinary)
+    content_type: Mapped[str] = mapped_column(String(20))
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )

@@ -89,6 +89,7 @@ export type CurrentUser = {
   team_id: string | null;
   mobile: string | null;
   email: string | null;
+  avatar_version: number | null;
   /** A rep in a finance team: activities and the team queue only (spec section 5). */
   finance_member: boolean;
   /** Team queues this user may open. */
