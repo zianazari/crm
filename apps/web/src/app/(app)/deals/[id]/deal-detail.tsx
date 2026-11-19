@@ -160,8 +160,8 @@ function FullDeal({ deal }: { deal: DealFull }) {
 
       <StageStrip deal={deal} />
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_22rem]">
-        <div className="space-y-6">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
+        <div className="min-w-0 space-y-6">
           <PlannedActivities subject={{ deal: { id: deal.id, name: deal.title } }} filter={{ deal_id: deal.id }} />
           <Timeline subject={{ deal_id: deal.id }} />
           <MoneyCard deal={deal} manager={manager} />

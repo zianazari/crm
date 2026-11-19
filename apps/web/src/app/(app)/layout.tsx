@@ -5,7 +5,7 @@ import { Providers } from "@/components/providers";
 export default function AppLayout({ children }: LayoutProps<"/">) {
   return (
     <Providers>
-      <div className="flex min-h-svh">
+      <div data-ui="app" className="flex min-h-svh">
         <AppSidebar />
         <div className="flex min-w-0 flex-1 flex-col">
           <AppHeader />
