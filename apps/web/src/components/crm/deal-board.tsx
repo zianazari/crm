@@ -2,7 +2,7 @@
 
 import { useState, type DragEvent } from "react";
 import { useRouter } from "next/navigation";
-import { Building2, CalendarPlus, CircleCheck, CircleX, EllipsisVertical, Lock, Plus } from "lucide-react";
+import { Building2, CalendarPlus, CircleCheck, CircleX, EllipsisVertical, Lock, Plus, UserRound } from "lucide-react";
 
 import { NextActionPill } from "@/components/crm/activity-bits";
 import { ActivityFormDialog } from "@/components/crm/activity-form-dialog";
@@ -193,9 +193,16 @@ function DealCard({
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 space-y-0.5">
+          {/* The company when the deal is with one (as in the design), else the person. */}
           <p className="flex items-center gap-1.5 text-base font-bold">
-            <Building2 className="size-4 shrink-0 text-muted-foreground" aria-hidden />
-            <span className="truncate">{deal.customer.full_name}</span>
+            {full?.organization ? (
+              <Building2 className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+            ) : (
+              <UserRound className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+            )}
+            <span className="truncate" title={full?.organization ? deal.customer.full_name : undefined}>
+              {full?.organization?.name ?? deal.customer.full_name}
+            </span>
             {full ? null : <Lock className="size-3.5 shrink-0 text-muted-foreground" aria-label="فقط وضعیت فعلی" />}
           </p>
           <p className="truncate text-muted-foreground">{deal.title}</p>

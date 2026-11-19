@@ -383,7 +383,8 @@ def test_unsubscribe_link(org: Org) -> None:
         assert db.scalar(select(Suppression).where(Suppression.address == "+989121110071"))
         assert db.get(Customer, uuid.UUID(customer["id"])).sms_consent is False  # type: ignore[union-attr]
         assert db.get(Lead, uuid.UUID(lead["id"])).sms_consent is False  # type: ignore[union-attr]
-    assert anonymous.get(f"/public/unsubscribe/{token[:-1]}0").status_code == 404
+    tampered = token[:-1] + ("1" if token.endswith("0") else "0")  # always a different token
+    assert anonymous.get(f"/public/unsubscribe/{tampered}").status_code == 404
     assert anonymous.get("/public/unsubscribe/nonsense").status_code == 404
 
 
