@@ -13,6 +13,7 @@ import {
   type LucideIcon,
   Send,
 } from "lucide-react";
+import { UserAvatar } from "@/components/crm/user-avatar";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
@@ -184,7 +185,8 @@ function TimelineItem({ entry }: { entry: TimelineEntry }) {
               </span>
             ) : null}
           </p>
-          <p className="text-xs text-muted-foreground">
+          <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <UserAvatar user={entry.actor} className="size-6" />
             {entry.actor.full_name} · {formatDateTime(entry.at)}
           </p>
         </div>

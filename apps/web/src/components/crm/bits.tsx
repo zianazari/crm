@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { Lock } from "lucide-react";
 
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { UserAvatar } from "@/components/crm/user-avatar";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
@@ -24,12 +24,9 @@ export function LeadStatusBadge({ status }: { status: LeadStatus }) {
 }
 
 export function Owner({ user, className }: { user: UserRef; className?: string }) {
-  const initial = user.full_name.trim().charAt(0);
   return (
     <span className={cn("inline-flex items-center gap-2", className)}>
-      <Avatar className="size-6">
-        <AvatarFallback className="bg-accent text-[11px] text-accent-foreground">{initial}</AvatarFallback>
-      </Avatar>
+      <UserAvatar user={user} />
       <span className="truncate">{user.full_name}</span>
     </span>
   );

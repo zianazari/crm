@@ -28,6 +28,8 @@ class UserRef(BaseModel):
 
     id: uuid.UUID
     full_name: str
+    # Photo version for /users/{id}/avatar?v=…; none means show the initial.
+    avatar_version: int | None = None
 
 
 class Page[T](BaseModel):

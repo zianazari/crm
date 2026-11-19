@@ -1,7 +1,8 @@
 /** Mirrors the API schemas in apps/api/app/modules/crm/schemas.py. */
 
 export type Ref = { id: string; name: string };
-export type UserRef = { id: string; full_name: string };
+/** A person; ``avatar_version`` is set when they have a profile photo. */
+export type UserRef = { id: string; full_name: string; avatar_version?: number | null };
 export type Page<T> = { items: T[]; total: number; page: number; page_size: number };
 
 export type LeadStatus = "new" | "working" | "qualified" | "disqualified" | "converted";
