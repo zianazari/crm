@@ -1,6 +1,7 @@
 """Operator commands. There is no public sign-up (spec section 2); admins create users.
 
 uv run python -m app.cli create-user --name "…" --mobile 0912… --role admin
+uv run python -m app.cli seed-demo [--reset]   (development and staging only)
 """
 
 import argparse
@@ -50,10 +51,21 @@ def main(argv: list[str] | None = None) -> int:
     cu.add_argument("--mobile")
     cu.add_argument("--email")
     cu.add_argument("--role", choices=[r.value for r in Role], default=Role.SALES_REP.value)
+    demo = sub.add_parser(
+        "seed-demo", help="Fill a development database with demo data like the design concepts"
+    )
+    demo.add_argument(
+        "--reset", action="store_true", help="first remove business data (keeps users and settings)"
+    )
     args = parser.parse_args(argv)
 
     if args.command == "create-user":
         return create_user(args.name, args.mobile, args.email, Role(args.role))
+    if args.command == "seed-demo":
+        from app.dev.demo import seed
+
+        seed(reset=args.reset)
+        return 0
     return 2
 
 
