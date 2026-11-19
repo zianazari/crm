@@ -66,6 +66,8 @@ class Settings(BaseSettings):
     smtp_starttls: bool = False
     email_from: str = "CRM <no-reply@crm.local>"
     message_max_attempts: int = 5
+    # Where the web app is reachable; used for links inside messages (unsubscribe).
+    public_web_url: str = "http://localhost:3000"
     # Prefix for RabbitMQ exchange/queue names; tests use their own so a running dev
     # worker never consumes test messages.
     queue_namespace: str = ""

@@ -6,6 +6,8 @@ Statuses of a message:
   sending -> unknown       (the provider may have the message but never answered;
                             never re-sent blindly — needs reconciliation)
   queued -> failed         (permanent error, or attempts exhausted)
+  queued -> canceled       (marketing: the campaign was paused, or the address was
+                            put on the do-not-send list, before sending started)
 "accepted" means the provider took the message, not that it was delivered.
 """
 
@@ -33,6 +35,7 @@ class Channel(enum.StrEnum):
 class Purpose(enum.StrEnum):
     OTP = "otp"
     NOTIFICATION = "notification"
+    MARKETING = "marketing"  # campaigns: subject to consent and the do-not-send list
 
 
 class MessageStatus(enum.StrEnum):
@@ -43,9 +46,11 @@ class MessageStatus(enum.StrEnum):
     FAILED = "failed"
     UNKNOWN = "unknown"
     EXPIRED = "expired"
+    CANCELED = "canceled"
 
 
 FINAL_STATUSES = {
+    MessageStatus.CANCELED,
     MessageStatus.ACCEPTED,
     MessageStatus.DELIVERED,
     MessageStatus.FAILED,
@@ -72,6 +77,9 @@ class OutboundMessage(UUIDPrimaryKey, Timestamps, Base):
     # OTP: the challenge this code belongs to; a newer challenge makes it obsolete.
     challenge_id: Mapped[str | None] = mapped_column(String(64))
     user_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id"), index=True)
+    campaign_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("campaigns.id", ondelete="SET NULL"), index=True
+    )
     expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     delivered_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
