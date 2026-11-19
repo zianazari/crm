@@ -85,6 +85,7 @@ export type Policy = {
   sms_unit_price: number;
   email_unit_price: number;
   monthly_budget: number | null;
+  user_daily_limit: number;
   spent_30_days: number;
 };
 

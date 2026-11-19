@@ -69,7 +69,7 @@ class Contact:
     created_at: datetime
 
 
-def _contact(row: Lead | Customer) -> Contact:
+def contact_of(row: Lead | Customer) -> Contact:
     return Contact(
         type="lead" if isinstance(row, Lead) else "customer",
         id=row.id,
@@ -137,9 +137,9 @@ def resolve(db: Session, scope: AccessScope, audience: Audience) -> list[Contact
     result: list[Contact] = []
     # Customers first: when a customer and a lead share an address, the customer stays.
     if want_customers:
-        result += [_contact(c) for c in db.scalars(customers.order_by(Customer.created_at))]
+        result += [contact_of(c) for c in db.scalars(customers.order_by(Customer.created_at))]
     if want_leads:
-        result += [_contact(lead) for lead in db.scalars(leads.order_by(Lead.created_at))]
+        result += [contact_of(lead) for lead in db.scalars(leads.order_by(Lead.created_at))]
     return result
 
 

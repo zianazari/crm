@@ -11,12 +11,14 @@ import {
   Loader2,
   StickyNote,
   type LucideIcon,
+  Send,
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import { ActivityFormDialog } from "@/components/crm/activity-form-dialog";
 import { ActivityItem, ActivityTypeIcon } from "@/components/crm/activity-bits";
+import { SendMessageDialog } from "@/components/crm/send-message-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -67,6 +69,7 @@ const FILTERS: { label: string; kinds: TimelineKind[] | null }[] = [
   { label: "همه", kinds: null },
   { label: "فعالیت‌ها", kinds: ["activity"] },
   { label: "یادداشت‌ها", kinds: ["note"] },
+  { label: "پیام‌ها", kinds: ["message"] },
   { label: "مراحل و پرداخت‌ها", kinds: ["stage", "payment"] },
 ];
 
@@ -79,10 +82,13 @@ export function Timeline({ subject, title = "سابقه پیگیری‌ها" }: 
   return (
     <Card>
       <CardHeader className="space-y-3">
-        <CardTitle className="flex items-center gap-2">
-          <History className="size-5" aria-hidden />
-          {title}
-        </CardTitle>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <CardTitle className="flex items-center gap-2">
+            <History className="size-5" aria-hidden />
+            {title}
+          </CardTitle>
+          <SendMessageDialog subject={subject} />
+        </div>
         <div className="flex flex-wrap gap-1.5" role="tablist" aria-label="نوع رویداد">
           {FILTERS.map((f, i) => (
             <button
@@ -129,6 +135,17 @@ const KIND_ICONS: Record<TimelineKind, LucideIcon> = {
   note: StickyNote,
   stage: GitCommitHorizontal,
   payment: Banknote,
+  message: Send,
+};
+
+const MESSAGE_STATUS: Record<string, string> = {
+  queued: "در صف",
+  sending: "در صف",
+  accepted: "پذیرفته‌شده توسط سرویس‌دهنده",
+  delivered: "تحویل‌شده",
+  failed: "ناموفق",
+  unknown: "نامشخص",
+  canceled: "لغو شد",
 };
 
 function TimelineItem({ entry }: { entry: TimelineEntry }) {
@@ -152,6 +169,20 @@ function TimelineItem({ entry }: { entry: TimelineEntry }) {
             {a ? <ActivityTypeIcon type={a.type} className="size-4 text-muted-foreground" /> : null}
             {entry.title}
             {canceled ? <span className="text-xs font-normal text-muted-foreground">(لغو شد)</span> : null}
+            {entry.message_status ? (
+              <span
+                className={cn(
+                  "rounded-full px-2 py-0.5 text-[11px] font-normal",
+                  entry.message_status === "delivered"
+                    ? "bg-success text-success-foreground"
+                    : entry.message_status === "failed" || entry.message_status === "canceled"
+                      ? "bg-destructive/10 text-destructive"
+                      : "bg-muted text-muted-foreground",
+                )}
+              >
+                {MESSAGE_STATUS[entry.message_status] ?? entry.message_status}
+              </span>
+            ) : null}
           </p>
           <p className="text-xs text-muted-foreground">
             {entry.actor.full_name} · {formatDateTime(entry.at)}

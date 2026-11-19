@@ -28,6 +28,7 @@ from app.modules.campaigns.models import (
     Campaign,
     CampaignRecipient,
     CampaignStatus,
+    DirectMessage,
     MessagingPolicy,
     RecipientStatus,
     Suppression,
@@ -130,15 +131,20 @@ def sent_today(db: Session, channel: Channel, now: datetime) -> int:
 
 
 def spent_30_days(db: Session, now: datetime) -> int:
-    return int(
-        db.scalar(
-            select(func.coalesce(func.sum(CampaignRecipient.cost), 0)).where(
-                CampaignRecipient.status == RecipientStatus.QUEUED,
-                CampaignRecipient.processed_at >= now - timedelta(days=30),
-            )
+    """Estimated spend of the last 30 days: campaigns and one-off template messages."""
+    since = now - timedelta(days=30)
+    campaigns = db.scalar(
+        select(func.coalesce(func.sum(CampaignRecipient.cost), 0)).where(
+            CampaignRecipient.status == RecipientStatus.QUEUED,
+            CampaignRecipient.processed_at >= since,
         )
-        or 0
     )
+    direct = db.scalar(
+        select(func.coalesce(func.sum(DirectMessage.cost), 0)).where(
+            DirectMessage.created_at >= since
+        )
+    )
+    return int(campaigns or 0) + int(direct or 0)
 
 
 # -- sending ----------------------------------------------------------------------------------
@@ -152,7 +158,7 @@ def _current_contact(db: Session, recipient: CampaignRecipient) -> aud.Contact |
     )
     if row is None or row.archived_at is not None:
         return None
-    return aud._contact(row)
+    return aud.contact_of(row)
 
 
 def _skip(recipient: CampaignRecipient, reason: str, now: datetime) -> None:
@@ -375,6 +381,11 @@ def tick(db: Session, now: datetime | None = None) -> bool:
 
 
 def recipient_address(db: Session, recipient_id: uuid.UUID) -> tuple[Channel, str] | None:
+    """The channel and address behind an unsubscribe link: a campaign recipient or a
+    one-off marketing message."""
+    direct = db.get(DirectMessage, recipient_id)
+    if direct is not None:
+        return direct.channel, direct.address
     row = db.execute(
         select(Campaign.channel, CampaignRecipient.address)
         .join(Campaign, Campaign.id == CampaignRecipient.campaign_id)
