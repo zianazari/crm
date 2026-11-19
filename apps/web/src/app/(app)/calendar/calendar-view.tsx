@@ -25,6 +25,7 @@ import {
 } from "@/lib/jalali";
 import { canManage, useAssignableUsers, useCalendar, useMe } from "@/lib/queries";
 import { ACTIVITY_TYPE_LABELS, type Activity, type ActivityType } from "@/lib/types";
+import { useHydrated } from "@/lib/use-hydrated";
 import { cn } from "@/lib/utils";
 
 type View = "week" | "day" | "month";
@@ -61,7 +62,9 @@ export function CalendarView({ today }: { today: string }) {
   const [selected, setSelected] = useState<Activity | null>(null);
   const { data: me } = useMe();
   const { data: users = [] } = useAssignableUsers();
-  const manager = canManage(me?.role);
+  const hydrated = useHydrated();
+  // Role-based controls appear after hydration, so server and client markup match.
+  const manager = hydrated && canManage(me?.role);
 
   const [from, to] =
     view === "month" ? monthRange(anchor) : view === "day" ? [anchor, anchor] : [startOfWeek(anchor), addDays(startOfWeek(anchor), 6)];

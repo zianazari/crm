@@ -124,7 +124,7 @@
   --secondary: oklch(0.26 0.005 85);
   --secondary-foreground: oklch(0.92 0.005 85);
   --muted: oklch(0.26 0.005 85);
-  --muted-foreground: oklch(0.72 0.01 85);
+  --muted-foreground: oklch(0.76 0.01 85);
   --accent: oklch(0.3 0.05 160);
   --accent-foreground: oklch(0.88 0.08 160);
   --destructive: oklch(0.7 0.19 22);
@@ -251,18 +251,18 @@
 }
 
 /* Type and spacing scale of the staff app and customer portal, measured against the
-   approved design concepts (docs/images/designs, 1586px wide): about 12% larger than
-   Tailwind's defaults. Scoped by a marker on those layouts, so dialogs and menus (which
+   approved design concepts (docs/images/designs, 1586px wide): body text 16px, small
+   text 14px, page titles 32px, spacing 12% larger than Tailwind's defaults. Scoped by a marker on those layouts, so dialogs and menus (which
    render outside them) follow, and the separately approved login page does not. */
 :root:has([data-ui="app"]) {
   --spacing: 0.28125rem;
-  --text-xs: 0.8125rem;
-  --text-sm: 0.9375rem;
-  --text-base: 1.0625rem;
-  --text-lg: 1.25rem;
-  --text-xl: 1.375rem;
-  --text-2xl: 1.875rem;
-  --text-3xl: 2.125rem;
+  --text-xs: 0.875rem;
+  --text-sm: 1rem;
+  --text-base: 1.125rem;
+  --text-lg: 1.3125rem;
+  --text-xl: 1.5rem;
+  --text-2xl: 2rem;
+  --text-3xl: 2.25rem;
 }
 
 @layer base {

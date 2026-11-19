@@ -592,6 +592,8 @@ class FollowUpRow(BaseModel):
     deal_id: uuid.UUID
     title: str
     customer: str
+    # The company the deal is with, when there is one (shown instead of the person).
+    organization: str | None = None
     owner: UserRef
     reason: Literal["no_next_action", "overdue"]
     next_activity: ActivityBrief | None
@@ -627,6 +629,7 @@ def needs_follow_up(
                     deal_id=d.id,
                     title=d.title,
                     customer=d.customer.full_name,
+                    organization=d.organization.name if d.organization else None,
                     owner=UserRef.model_validate(d.owner),
                     reason="no_next_action" if nxt is None else "overdue",
                     next_activity=nxt,

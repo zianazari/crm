@@ -35,7 +35,9 @@ export function ActivitiesView() {
   const [page, setPage] = useState(1);
   const { data: me } = useMe();
   const { data: users = [] } = useAssignableUsers();
-  const manager = canManage(me?.role);
+  const hydrated = useHydrated();
+  // Role-based controls appear after hydration, so server and client markup match.
+  const manager = hydrated && canManage(me?.role);
   const current = TABS.find((t) => t.key === tab)!;
   const { data, isPending, error } = useActivities({
     ...current.params,
