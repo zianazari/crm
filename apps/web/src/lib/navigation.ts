@@ -5,6 +5,7 @@ import {
   CircleCheckBig,
   House,
   Inbox,
+  Megaphone,
   Settings,
   UserPlus,
   Users,
@@ -38,6 +39,7 @@ export const mainNav: NavItem[] = [
   { href: "/team-queue", label: "صف کار تیم", icon: Inbox, queue: true },
   { href: "/calendar", label: "تقویم", icon: Calendar },
   { href: "/reports", label: "گزارش‌ها", icon: ChartColumn, sales: true },
+  { href: "/campaigns", label: "کمپین‌ها", icon: Megaphone, managersOnly: true, sales: true },
   { href: "/automations", label: "اتوماسیون", icon: Workflow, managersOnly: true },
 ];
 
