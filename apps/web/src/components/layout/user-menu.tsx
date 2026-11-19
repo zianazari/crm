@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { LogOut } from "lucide-react";
+import { LogOut, Monitor, Moon, Sun } from "lucide-react";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -10,10 +10,13 @@ import {
   DropdownMenuItem,
   DropdownMenuGroup,
   DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { apiFetch, fetchMe, redirectToLogin, type CurrentUser } from "@/lib/api";
+import { setTheme, useThemeChoice, type ThemeChoice } from "@/lib/theme";
 
 const ROLE_LABELS: Record<CurrentUser["role"], string> = {
   admin: "ادمین",
@@ -45,6 +48,7 @@ export function UserMenu() {
     }
   }
 
+  const theme = useThemeChoice();
   if (!user) return <div className="size-9 animate-pulse rounded-full bg-muted" aria-hidden />;
 
   return (
@@ -64,6 +68,24 @@ export function UserMenu() {
             <div className="text-sm font-semibold text-foreground">{user.full_name}</div>
             <div className="text-xs">{ROLE_LABELS[user.role]}</div>
           </DropdownMenuLabel>
+        </DropdownMenuGroup>
+        <DropdownMenuSeparator />
+        <DropdownMenuGroup>
+          <DropdownMenuLabel>ظاهر</DropdownMenuLabel>
+          <DropdownMenuRadioGroup value={theme} onValueChange={(value) => setTheme(value as ThemeChoice)}>
+            <DropdownMenuRadioItem value="light">
+              <Sun aria-hidden />
+              روشن
+            </DropdownMenuRadioItem>
+            <DropdownMenuRadioItem value="dark">
+              <Moon aria-hidden />
+              تیره
+            </DropdownMenuRadioItem>
+            <DropdownMenuRadioItem value="system">
+              <Monitor aria-hidden />
+              مطابق دستگاه
+            </DropdownMenuRadioItem>
+          </DropdownMenuRadioGroup>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => void logout()}>

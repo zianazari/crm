@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { LogOut } from "lucide-react";
 
+import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { portalFetch, type PortalMe } from "@/lib/portal";
 
@@ -35,6 +36,7 @@ export function PortalHeader() {
           <span className="font-bold">پنل مشتری</span>
         </Link>
         <span className="ms-auto truncate text-sm text-muted-foreground">{me?.customer_name}</span>
+        <ThemeToggle />
         <Button variant="ghost" size="sm" onClick={() => void logout()}>
           <LogOut aria-hidden />
           خروج
