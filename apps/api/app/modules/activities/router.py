@@ -4,6 +4,7 @@ from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
+from sqlalchemy.orm import Session
 
 from app.modules.activities.models import (
     OPEN_STATUSES,
@@ -43,6 +44,8 @@ from app.modules.activities.service import (
     visible_filter,
 )
 from app.modules.auth.deps import DbDep, require_csrf
+from app.modules.booking.service import booking_of_activity
+from app.modules.booking.service import cancel as cancel_booking
 from app.modules.crm.common import ScopeDep, paginate, resolve_owner, unprocessable
 from app.modules.crm.schemas import Page, UserRef
 from app.modules.identity.models import User
@@ -56,6 +59,17 @@ StatusFilter = Literal["open", "done", "canceled", "all"]
 _FORBIDDEN_SCHEDULE = HTTPException(
     status.HTTP_403_FORBIDDEN, detail="مشاهده برنامه این کاربر مجاز نیست."
 )
+
+
+def guard_booked(db: Session, activity: Activity) -> None:
+    """A meeting a customer booked moves only through the booking, so the customer's
+    confirmation and the calendar never disagree; staff can cancel it instead."""
+    if booking_of_activity(db, activity.id) is not None:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            detail="این جلسه را مشتری رزرو کرده است و زمان یا مسئول آن از اینجا تغییر نمی‌کند. "
+            "می‌توانید آن را لغو کنید تا به مشتری خبر داده شود.",
+        )
 
 
 def end_of_week(day: date) -> date:
@@ -284,6 +298,8 @@ def update_activity(
     activity = load_for_change(db, scope, activity_id, body.version)
     require_open(activity)
     data = body.model_dump(exclude_unset=True, exclude={"version"})
+    if {"owner_id", "due_date", "start_time", "duration_minutes"} & data.keys():
+        guard_booked(db, activity)
 
     if "owner_id" in data and data["owner_id"] not in (None, activity.owner_id):
         new_owner = resolve_owner(db, scope, data["owner_id"])
@@ -379,6 +395,7 @@ def postpone_activity(
 ) -> ActivityOut:
     activity = load_for_change(db, scope, activity_id, body.version)
     require_open(activity)
+    guard_booked(db, activity)
     before = schedule_snapshot(activity)
     activity.due_date = body.due_date
     activity.start_at = start_at_for(body.due_date, body.start_time)
@@ -407,6 +424,11 @@ def cancel_activity(
     activity.cancel_reason = body.reason.strip()
     activity.version += 1
     record_event(db, activity, scope, "canceled", {"reason": activity.cancel_reason})
+    booking = booking_of_activity(db, activity.id)
+    if booking is not None:  # a meeting the customer booked: free it and tell them
+        cancel_booking(
+            db, booking, activity.cancel_reason, by_user=scope.user.id, cancel_activity=False
+        )
     db.commit()
     db.refresh(activity)
     return out(activity)

@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
 from app.modules.activities.models import OPEN_STATUSES, Activity
+from app.modules.booking.service import send_customer_reminders
 from app.modules.identity.models import User
 from app.modules.notifications.models import NotificationKind
 from app.modules.notifications.service import ACTIVITY_LABELS, DIGEST_HOUR, fa, notify
@@ -114,5 +115,6 @@ def tick(db: Session, now: datetime | None = None) -> bool:
         return False
     send_reminders(db, now)
     send_daily_digest(db, now)
+    send_customer_reminders(db, now)
     db.commit()
     return True

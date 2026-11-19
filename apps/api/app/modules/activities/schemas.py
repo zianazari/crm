@@ -130,7 +130,7 @@ class EventOut(BaseModel):
     id: uuid.UUID
     kind: str
     details: dict[str, Any] | None
-    actor: UserRef
+    actor: UserRef | None  # None: the customer
     at: datetime
 
 

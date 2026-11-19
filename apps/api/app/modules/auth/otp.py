@@ -30,7 +30,7 @@ from app.modules.identity.models import User
 
 logger = logging.getLogger("crm.auth.otp")
 
-Audience = Literal["login", "portal"]  # "login" = staff
+Audience = Literal["login", "portal", "booking"]  # "login" = staff
 Lookup = Callable[[Session, Channel, str], uuid.UUID | None]
 
 

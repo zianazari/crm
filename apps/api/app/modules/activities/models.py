@@ -114,10 +114,11 @@ class ActivityEvent(UUIDPrimaryKey, Base):
     )
     kind: Mapped[str] = mapped_column(String(20))
     details: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
-    actor_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
+    # Empty when the customer did it (booking, moving or canceling a meeting).
+    actor_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id"))
     at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
-    actor: Mapped[User] = relationship(lazy="joined")
+    actor: Mapped[User | None] = relationship(lazy="joined")
 
 
 class Note(UUIDPrimaryKey, Timestamps, Base):
