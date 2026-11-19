@@ -257,7 +257,7 @@ function StageStrip({ deal }: { deal: DealFull }) {
               <span
                 className={cn(
                   "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium",
-                  deal.status === "won" ? "bg-primary text-primary-foreground" : "bg-destructive text-white",
+                  deal.status === "won" ? "bg-primary text-primary-foreground" : "bg-destructive text-white dark:text-background",
                 )}
               >
                 {deal.status === "won" ? <CircleCheck className="size-4" aria-hidden /> : <CircleX className="size-4" aria-hidden />}

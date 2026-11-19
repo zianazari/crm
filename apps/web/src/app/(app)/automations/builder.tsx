@@ -2,6 +2,7 @@
 
 import "@xyflow/react/dist/style.css";
 
+
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type DragEvent, type ReactNode } from "react";
 import {
   Background,
@@ -45,6 +46,7 @@ import { formatNumber } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { BlockSettings } from "./block-settings";
 import { BlockSummary } from "./parts";
+import { useResolvedTheme } from "@/lib/theme";
 
 type BlockData = { kind: BlockKind; config: BlockConfig; step: number; problems: string[] };
 type BlockNode = Node<BlockData, "block">;
@@ -200,6 +202,7 @@ export function Builder({
   onChange: (graph: Graph) => void;
   ruleSettings: ReactNode;
 }) {
+  const colorMode = useResolvedTheme();
   const flow = useReactFlow();
   const [{ nodes, edges }, setFlow] = useState(() => toFlow(initial));
   const [revision, setRevision] = useState(0);
@@ -438,6 +441,7 @@ export function Builder({
             maxZoom={1.5}
             proOptions={{ hideAttribution: true }}
             ariaLabelConfig={ARIA_LABELS}
+            colorMode={colorMode}
           >
             <Background gap={20} size={1} />
             <ZoomControls />

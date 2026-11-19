@@ -110,7 +110,7 @@ export function NotificationBell() {
       >
         <Bell className="size-5" />
         {unread ? (
-          <span className="absolute -top-0.5 -end-0.5 grid min-w-4.5 place-items-center rounded-full bg-destructive px-1 text-[10px] font-semibold text-white">
+          <span className="absolute -top-0.5 -end-0.5 grid min-w-4.5 place-items-center rounded-full bg-destructive px-1 text-[10px] font-semibold text-white dark:text-background">
             {unread > 99 ? "۹۹+" : formatNumber(unread)}
           </span>
         ) : null}
