@@ -55,7 +55,7 @@ def _clean_state() -> Iterator[None]:
             text(
                 "TRUNCATE auth_sessions, users, teams, tags, activities, notes, audit_log, "
                 "notifications, automation_events, automation_rules, team_tasks, campaigns, "
-                "suppressions, messaging_policy CASCADE"
+                "suppressions, messaging_policy, message_templates CASCADE"
             )
         )
         db.commit()

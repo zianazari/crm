@@ -25,10 +25,12 @@ from app.modules.activities.schemas import (
 )
 from app.modules.activities.service import out, resolve_links, today, touch_records
 from app.modules.auth.deps import DbDep, require_csrf
+from app.modules.campaigns.models import DirectMessage
 from app.modules.crm.access import AccessScope
 from app.modules.crm.common import NOT_FOUND, ScopeDep, require_sales_access, unprocessable
 from app.modules.crm.models import Customer, Lead
 from app.modules.crm.schemas import UserRef
+from app.modules.messaging.models import Channel
 from app.modules.sales.models import Deal, DealHistory, DealStatus, Payment, PaymentKind
 
 router = APIRouter(
@@ -72,7 +74,7 @@ def timeline(
     Page with ``before`` = the ``at`` of the last entry received."""
     if sum(x is not None for x in (deal_id, customer_id, lead_id)) != 1:
         raise unprocessable("دقیقاً یکی از فروش، مشتری یا مشتری احتمالی را مشخص کنید.")
-    wanted = set(kinds or ["activity", "note", "stage", "payment"])
+    wanted = set(kinds or ["activity", "note", "stage", "payment", "message"])
     deal_ids, activity_scope, note_scope = _subject(db, scope, deal_id, customer_id, lead_id)
 
     entries: list[TimelineEntry] = []
@@ -125,6 +127,26 @@ def timeline(
                     body=n.body,
                 )
             )
+    if "message" in wanted:
+        for m in db.scalars(
+            select(DirectMessage)
+            .where(note_scope(DirectMessage), _before(DirectMessage.created_at, before))
+            .order_by(DirectMessage.created_at.desc())
+            .limit(take)
+        ):
+            label = "پیامک" if m.channel is Channel.SMS else "ایمیل"
+            entries.append(
+                TimelineEntry(
+                    kind="message",
+                    id=m.id,
+                    at=m.created_at,
+                    actor=UserRef.model_validate(m.sender),
+                    title=f"{label} «{m.template_name}» به {m.contact_name}",
+                    body=m.text,
+                    message_status=m.message.status.value if m.message else None,
+                    deal=_deal_ref(db, m.deal_id) if m.deal_id and not deal_id else None,
+                )
+            )
     if "stage" in wanted and deal_ids:
         for h in db.scalars(
             select(DealHistory)
@@ -173,7 +195,8 @@ def _before(
     return column < before if before is not None else true()
 
 
-Belongs = Callable[[type[Activity] | type[Note]], ColumnElement[bool]]
+Subject = type[Activity] | type[Note] | type[DirectMessage]
+Belongs = Callable[[Subject], ColumnElement[bool]]
 
 
 def _subject(
@@ -191,7 +214,7 @@ def _subject(
             raise NOT_FOUND
         scope.require_full(deal.owner_id)
 
-        def of_deal(model: type[Activity] | type[Note]) -> ColumnElement[bool]:
+        def of_deal(model: Subject) -> ColumnElement[bool]:
             return model.deal_id == deal.id
 
         return [deal.id], of_deal, of_deal
@@ -202,7 +225,7 @@ def _subject(
             raise NOT_FOUND
         scope.require_full(lead.owner_id)
 
-        def of_lead(model: type[Activity] | type[Note]) -> ColumnElement[bool]:
+        def of_lead(model: Subject) -> ColumnElement[bool]:
             return model.lead_id == lead.id
 
         return [], of_lead, of_lead
@@ -217,7 +240,7 @@ def _subject(
         if scope.has_full_access(d.owner_id)
     ]
 
-    def belongs(model: type[Activity] | type[Note]) -> ColumnElement[bool]:
+    def belongs(model: Subject) -> ColumnElement[bool]:
         # The customer's own items, or items of deals the user may see in full.
         return and_(
             model.customer_id == customer.id,

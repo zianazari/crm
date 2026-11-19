@@ -145,6 +145,7 @@ class PolicyOut(BaseModel):
     sms_unit_price: int
     email_unit_price: int
     monthly_budget: int | None
+    user_daily_limit: int
     spent_30_days: int = 0
 
 
@@ -156,6 +157,7 @@ class PolicyIn(BaseModel):
     sms_unit_price: int = Field(ge=0, le=10**9)
     email_unit_price: int = Field(ge=0, le=10**9)
     monthly_budget: int | None = Field(default=None, ge=0, le=10**15)
+    user_daily_limit: int = Field(default=20, ge=0, le=10_000)
 
     @model_validator(mode="after")
     def _order(self) -> "PolicyIn":

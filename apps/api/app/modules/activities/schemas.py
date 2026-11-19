@@ -166,7 +166,7 @@ class NoteOut(BaseModel):
     created_at: datetime
 
 
-TimelineKind = Literal["activity", "note", "stage", "payment"]
+TimelineKind = Literal["activity", "note", "stage", "payment", "message"]
 
 
 class TimelineEntry(BaseModel):
@@ -178,6 +178,8 @@ class TimelineEntry(BaseModel):
     body: str | None = None
     activity: ActivityOut | None = None
     deal: LinkRef | None = None
+    # A template message sent from the record: its delivery status (queued, accepted…).
+    message_status: str | None = None
 
 
 class TimelinePage(BaseModel):

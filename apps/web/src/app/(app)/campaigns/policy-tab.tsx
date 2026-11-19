@@ -48,6 +48,7 @@ function PolicyForm({ admin, data }: { admin: boolean; data: Policy }) {
           sms_unit_price: values.sms_unit_price,
           email_unit_price: values.email_unit_price,
           monthly_budget: values.monthly_budget,
+          user_daily_limit: values.user_daily_limit,
         }),
       });
       queryClient.setQueryData(KEY, saved);
@@ -85,6 +86,9 @@ function PolicyForm({ admin, data }: { admin: boolean; data: Policy }) {
           </Field>
           <Field label="قیمت هر ایمیل (تومان)" htmlFor="p-email-price">
             <AmountInput id="p-email-price" value={values.email_unit_price} onChange={(v) => set({ email_unit_price: v ?? 0 })} />
+          </Field>
+          <Field label="سقف ارسال تکی هر نفر در روز" htmlFor="p-user-limit" hint="پیام‌هایی که کارشناس با قالب از پرونده می‌فرستد.">
+            <Input id="p-user-limit" inputMode="numeric" value={formatNumber(values.user_daily_limit)} onChange={(e) => set({ user_daily_limit: int(e.target.value) })} />
           </Field>
           <Field label="سقف مصرف ۳۰ روز اخیر (تومان)" htmlFor="p-budget" hint="خالی یعنی بدون سقف؛ با رسیدن به سقف، کمپین متوقف می‌شود.">
             <AmountInput id="p-budget" value={values.monthly_budget} onChange={(v) => set({ monthly_budget: v })} />

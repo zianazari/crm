@@ -147,7 +147,62 @@ class MessagingPolicy(Base):
     email_unit_price: Mapped[int] = mapped_column(BigInteger, default=0)
     # Marketing spend allowed in any rolling 30 days (toman); None = no limit.
     monthly_budget: Mapped[int | None] = mapped_column(BigInteger)
+    # One-off template messages a person may send per day from their own records.
+    user_daily_limit: Mapped[int] = mapped_column(default=20, server_default="20")
     updated_by_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id"))
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
+
+
+class TemplateKind(enum.StrEnum):
+    SERVICE = "service"  # information about the customer's own business, e.g. an invoice
+    MARKETING = "marketing"  # promotional: consent, do-not-send list, window, unsubscribe
+
+
+class MessageTemplate(UUIDPrimaryKey, Timestamps, Base):
+    """An approved text that staff may send one at a time (spec section 5); written by
+    managers and admins, so reps never send free text from the system."""
+
+    __tablename__ = "message_templates"
+
+    name: Mapped[str] = mapped_column(String(120))
+    channel: Mapped[Channel] = mapped_column(_enum(Channel, "message_channel"))
+    kind: Mapped[TemplateKind] = mapped_column(_enum(TemplateKind, "message_template_kind"))
+    subject: Mapped[str | None] = mapped_column(String(200))
+    body: Mapped[str] = mapped_column(Text)
+    is_active: Mapped[bool] = mapped_column(default=True)
+    created_by_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
+
+
+class DirectMessage(UUIDPrimaryKey, Base):
+    """One template sent by a person from a record; shown on that record's timeline."""
+
+    __tablename__ = "direct_messages"
+    __table_args__ = (
+        # A retried request (double click, flaky network) never sends twice.
+        UniqueConstraint("sender_id", "request_id"),
+    )
+
+    template_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("message_templates.id"))
+    template_name: Mapped[str] = mapped_column(String(120))
+    kind: Mapped[TemplateKind] = mapped_column(_enum(TemplateKind, "message_template_kind"))
+    channel: Mapped[Channel] = mapped_column(_enum(Channel, "message_channel"))
+    sender_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), index=True)
+    request_id: Mapped[uuid.UUID]
+    lead_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("leads.id"), index=True)
+    customer_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("customers.id"), index=True)
+    deal_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("deals.id"), index=True)
+    contact_name: Mapped[str] = mapped_column(String(160))
+    address: Mapped[str] = mapped_column(String(254))
+    text: Mapped[str] = mapped_column(Text)
+    message_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("outbound_messages.id", ondelete="SET NULL"), unique=True
+    )
+    cost: Mapped[int] = mapped_column(BigInteger, default=0)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), index=True
+    )
+
+    sender: Mapped[User] = relationship(lazy="joined")
+    message: Mapped[OutboundMessage | None] = relationship(lazy="joined")

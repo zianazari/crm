@@ -241,7 +241,7 @@ export type Workload = {
   overlaps: { first: string; second: string }[];
 };
 
-export type TimelineKind = "activity" | "note" | "stage" | "payment";
+export type TimelineKind = "activity" | "note" | "stage" | "payment" | "message";
 
 export type TimelineEntry = {
   kind: TimelineKind;
@@ -252,6 +252,8 @@ export type TimelineEntry = {
   body: string | null;
   activity: Activity | null;
   deal: LinkRef | null;
+  /** For a sent template message: queued, accepted, delivered, failed… */
+  message_status?: string | null;
 };
 
 export const ACTIVITY_TYPE_LABELS: Record<ActivityType, string> = {

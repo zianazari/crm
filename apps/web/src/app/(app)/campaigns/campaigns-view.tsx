@@ -33,11 +33,13 @@ import { cn } from "@/lib/utils";
 import { CampaignStatusBadge, ProgressBar } from "./parts";
 import { PolicyTab } from "./policy-tab";
 import { SuppressionsTab } from "./suppressions-tab";
+import { TemplatesTab } from "./templates-tab";
 
-type Tab = "campaigns" | "suppressions" | "policy";
+type Tab = "campaigns" | "templates" | "suppressions" | "policy";
 
 const TABS: { key: Tab; label: string }[] = [
   { key: "campaigns", label: "کمپین‌ها" },
+  { key: "templates", label: "قالب‌های پیام" },
   { key: "suppressions", label: "فهرست عدم ارسال" },
   { key: "policy", label: "قواعد ارسال" },
 ];
@@ -82,6 +84,7 @@ export function CampaignsView() {
         ))}
       </div>
       {tab === "campaigns" ? <CampaignList /> : null}
+      {tab === "templates" ? <TemplatesTab /> : null}
       {tab === "suppressions" ? <SuppressionsTab admin={me.role === "admin"} /> : null}
       {tab === "policy" ? <PolicyTab admin={me.role === "admin"} /> : null}
     </>
