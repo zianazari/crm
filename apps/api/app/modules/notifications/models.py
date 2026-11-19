@@ -23,6 +23,7 @@ class NotificationKind(enum.StrEnum):
     TEAM_TASK = "team_task"  # new work in a team queue
     CAMPAIGN = "campaign"  # a campaign finished, failed or hit the budget
     TICKET = "ticket"  # a ticket was opened, answered by the customer, or assigned
+    BOOKING = "booking"  # a customer booked, moved or canceled a meeting
 
 
 class Notification(UUIDPrimaryKey, Base):

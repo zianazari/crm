@@ -16,6 +16,9 @@ from app.modules.audit import router as audit_router
 from app.modules.auth.router import router as auth_router
 from app.modules.auth.sender import SenderNotConfiguredError
 from app.modules.automation import router as automation
+from app.modules.booking import portal as booking_portal
+from app.modules.booking import public as booking_public
+from app.modules.booking import router as booking
 from app.modules.campaigns import direct
 from app.modules.campaigns import router as campaigns
 from app.modules.crm import customers, leads, organizations, reference
@@ -87,6 +90,9 @@ def create_app() -> FastAPI:
         portal_access.router,
         tickets.router,
         portal_tickets.router,
+        booking.router,
+        booking_public.router,
+        booking_portal.router,
     ):
         app.include_router(portal_router)
     app.include_router(campaigns.public)
