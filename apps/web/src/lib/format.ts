@@ -6,6 +6,11 @@ export function formatNumber(value: number): string {
 }
 
 /** Formats an amount in the organization's base currency (toman). */
+/** A tracking number or code: Persian digits, no thousands separator («۱۰۰۲»). */
+export function formatCode(value: number): string {
+  return String(value).replace(/\d/g, (d) => "۰۱۲۳۴۵۶۷۸۹"[Number(d)]);
+}
+
 export function formatToman(value: number): string {
   return `${formatNumber(value)} تومان`;
 }

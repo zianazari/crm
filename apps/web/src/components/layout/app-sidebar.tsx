@@ -5,7 +5,7 @@ import { Suspense } from "react";
 import { usePathname } from "next/navigation";
 
 import { formatNumber } from "@/lib/format";
-import { canManage, useMe, useQueueCount, useWorkload } from "@/lib/queries";
+import { canManage, useMe, useNewTicketCount, useQueueCount, useWorkload } from "@/lib/queries";
 import { useHydrated } from "@/lib/use-hydrated";
 import { cn } from "@/lib/utils";
 import { mainNav, secondaryNav, type NavItem } from "@/lib/navigation";
@@ -74,6 +74,7 @@ function NavList({ pathname, onNavigate }: { pathname: string | null; onNavigate
   const finance = hydrated && Boolean(me?.finance_member);
   const queue = hydrated && Boolean(me?.queue_team_ids.length);
   const { data: queueCount } = useQueueCount(queue);
+  const { data: newTickets } = useNewTicketCount(hydrated && Boolean(me) && !finance);
   const visible = (item: NavItem) =>
     (!item.managersOnly || manager) && (!item.sales || !finance) && (!item.queue || queue);
 
@@ -85,8 +86,18 @@ function NavList({ pathname, onNavigate }: { pathname: string | null; onNavigate
             key={item.href}
             item={item}
             active={isActive(item.href)}
-            badge={item.href === "/activities" ? due : item.href === "/team-queue" ? queueCount : undefined}
-            badgeLabel={item.href === "/team-queue" ? "کار در صف" : "کار امروز و معوق"}
+            badge={
+              item.href === "/activities"
+                ? due
+                : item.href === "/team-queue"
+                  ? queueCount
+                  : item.href === "/tickets"
+                    ? newTickets
+                    : undefined
+            }
+            badgeLabel={
+              item.href === "/team-queue" ? "کار در صف" : item.href === "/tickets" ? "تیکت جدید" : "کار امروز و معوق"
+            }
           />
         ))}
       </nav>

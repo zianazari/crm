@@ -248,7 +248,7 @@ function DeactivateDialog({ user, users }: { user: AdminUser; users: AdminUser[]
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { data: items } = useSettings<OpenItems>(`/users/${user.id}/open-items`, {}, open);
-  const total = items ? items.leads + items.customers + items.deals + items.activities : 0;
+  const total = items ? items.leads + items.customers + items.deals + items.activities + items.tickets : 0;
 
   async function deactivate() {
     setPending(true);
@@ -292,7 +292,8 @@ function DeactivateDialog({ user, users }: { user: AdminUser; users: AdminUser[]
           <div className="space-y-3 text-sm">
             <p>
               کارهای باز: {formatNumber(items.leads)} مشتری احتمالی، {formatNumber(items.customers)} مشتری،{" "}
-              {formatNumber(items.deals)} فروش باز و {formatNumber(items.activities)} فعالیت.
+              {formatNumber(items.deals)} فروش باز، {formatNumber(items.activities)} فعالیت و{" "}
+              {formatNumber(items.tickets)} تیکت باز.
             </p>
             <Field label="انتقال به" htmlFor="transfer-to">
               <NativeSelect id="transfer-to" className="w-full" value={target} onChange={(e) => setTarget(e.target.value)}>

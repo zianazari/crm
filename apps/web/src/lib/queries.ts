@@ -119,6 +119,16 @@ export function useQueueCount(enabled: boolean) {
   });
 }
 
+/** New tickets the user can see (for the menu badge). */
+export function useNewTicketCount(enabled: boolean) {
+  return useQuery({
+    queryKey: ["tickets", "count"],
+    queryFn: async () => (await apiFetch<Page<unknown>>("/tickets?status=new&page_size=1")).total,
+    enabled,
+    refetchInterval: 60_000,
+  });
+}
+
 export function useStages() {
   return useQuery({ queryKey: ["stages"], queryFn: () => apiFetch<Stage[]>("/stages"), staleTime: 60_000 });
 }

@@ -301,7 +301,7 @@ export type Team = {
   member_count: number;
 };
 
-export type OpenItems = { leads: number; customers: number; deals: number; activities: number };
+export type OpenItems = { leads: number; customers: number; deals: number; activities: number; tickets: number };
 
 export type AuditEntry = {
   id: string;
