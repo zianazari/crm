@@ -26,3 +26,5 @@ node_modules/
 *.tfstate
 *.tfstate.*
 terraform.tfvars
+tfplan
+*.tfplan
