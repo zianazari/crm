@@ -23,9 +23,9 @@ function detectChannel(value: string): Channel | null {
   return /^\d{10,14}$/.test(digits) ? "sms" : null;
 }
 
-function safeNext(next: string | null): string {
-  // Only same-site paths, never "//evil.example" or absolute URLs.
-  return next && next.startsWith("/") && !next.startsWith("//") ? next : "/overview";
+function safeNext(next: string | null, fallback: string, area: string): string {
+  // Only same-site paths inside this area, never "//evil.example" or absolute URLs.
+  return next && next.startsWith(area) && !next.startsWith("//") ? next : fallback;
 }
 
 function useCountdown() {
@@ -38,7 +38,17 @@ function useCountdown() {
   return [seconds, setSeconds] as const;
 }
 
-export function LoginForm() {
+/** The OTP login form. Staff use it as is; the customer portal passes its own API prefix
+ * and home, so the two never share a session. */
+export function LoginForm({
+  api = "/auth",
+  home = "/overview",
+  area = "/",
+}: {
+  api?: string;
+  home?: string;
+  area?: string;
+} = {}) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [destination, setDestination] = useState("");
@@ -66,7 +76,7 @@ export function LoginForm() {
     }
     setPending(true);
     try {
-      const result = await apiFetch<Challenge>("/auth/otp/request", {
+      const result = await apiFetch<Challenge>(`${api}/otp/request`, {
         method: "POST",
         body: JSON.stringify({ channel, destination }),
       });
@@ -86,11 +96,11 @@ export function LoginForm() {
     setError(null);
     setPending(true);
     try {
-      await apiFetch("/auth/otp/verify", {
+      await apiFetch(`${api}/otp/verify`, {
         method: "POST",
         body: JSON.stringify({ challenge_id: challenge.challenge_id, code: value }),
       });
-      router.replace(safeNext(searchParams.get("next")));
+      router.replace(safeNext(searchParams.get("next"), home, area));
     } catch (err) {
       setError(describe(err));
       setCode("");

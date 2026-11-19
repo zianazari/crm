@@ -24,6 +24,7 @@ import { toast } from "sonner";
 import { AssignDialog } from "@/components/crm/assign-dialog";
 import { InfoRow, Owner } from "@/components/crm/bits";
 import { consentText } from "@/components/crm/consent-fields";
+import { CustomerSupport } from "@/components/crm/customer-support";
 import { CustomerFormDialog } from "@/components/crm/customer-form-dialog";
 import { DealFormDialog } from "@/components/crm/deal-form-dialog";
 import { DealStatusBadge } from "@/components/crm/deal-status";
@@ -148,6 +149,7 @@ function FullCustomer({ customer }: { customer: CustomerFull }) {
             filter={{ customer_id: customer.id }}
           />
           <CustomerDeals customer={customer} />
+          <CustomerSupport customer={customer} editable={!archived} />
           <Timeline subject={{ customer_id: customer.id }} />
         </div>
 
