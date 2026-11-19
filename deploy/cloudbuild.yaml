@@ -1,0 +1,10 @@
+# gcloud builds submit --config deploy/cloudbuild.yaml --substitutions _REPO=…,_TAG=… .
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args: ["build", "-t", "${_REPO}/api:${_TAG}", "apps/api"]
+  - name: gcr.io/cloud-builders/docker
+    args: ["build", "-t", "${_REPO}/web:${_TAG}", "apps/web"]
+images: ["${_REPO}/api:${_TAG}", "${_REPO}/web:${_TAG}"]
+options:
+  machineType: E2_HIGHCPU_8
+timeout: 1800s
