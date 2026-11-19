@@ -62,7 +62,6 @@ def _load(db: Session, token: str) -> BookingLink:
 class Contact:
     channel: Channel
     address: str
-    csrf_cookie: str
 
 
 def _contact(request: Request, db: Session, redis: Redis, link: BookingLink) -> Contact | None:
@@ -72,7 +71,7 @@ def _contact(request: Request, db: Session, redis: Redis, link: BookingLink) -> 
         if raw:
             data = json.loads(raw)
             if data["link"] == str(link.id):
-                return Contact(Channel(data["channel"]), data["address"], CSRF_COOKIE)
+                return Contact(Channel(data["channel"]), data["address"])
     if request.cookies.get(portal_auth.SESSION_COOKIE):
         try:
             user = portal_auth.current_portal_user(request, db)
@@ -80,7 +79,7 @@ def _contact(request: Request, db: Session, redis: Redis, link: BookingLink) -> 
             return None
         if user.customer_id == link.customer_id:
             identity = user.identity
-            return Contact(identity.channel, identity.address, portal_auth.CSRF_COOKIE)
+            return Contact(identity.channel, identity.address)
     return None
 
 
@@ -88,9 +87,10 @@ def _require_contact(request: Request, db: Session, redis: Redis, link: BookingL
     contact = _contact(request, db, redis, link)
     if contact is None:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, detail="ابتدا هویت خود را تأیید کنید.")
+    # Either CSRF cookie will do: both are readable only by our own pages.
     header = request.headers.get(portal_auth.CSRF_HEADER, "")
-    cookie = request.cookies.get(contact.csrf_cookie, "")
-    if not header or not cookie or not secrets.compare_digest(header, cookie):
+    cookies = [request.cookies.get(name, "") for name in (CSRF_COOKIE, portal_auth.CSRF_COOKIE)]
+    if not header or not any(c and secrets.compare_digest(header, c) for c in cookies):
         raise HTTPException(status.HTTP_403_FORBIDDEN, detail="درخواست نامعتبر است.")
     return contact
 

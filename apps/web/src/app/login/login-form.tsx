@@ -44,10 +44,15 @@ export function LoginForm({
   api = "/auth",
   home = "/overview",
   area = "/",
+  onVerified,
+  submitLabel = "ورود",
 }: {
   api?: string;
   home?: string;
   area?: string;
+  /** Called instead of navigating away, e.g. on the booking page. */
+  onVerified?: () => void;
+  submitLabel?: string;
 } = {}) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -100,6 +105,10 @@ export function LoginForm({
         method: "POST",
         body: JSON.stringify({ challenge_id: challenge.challenge_id, code: value }),
       });
+      if (onVerified) {
+        onVerified();
+        return;
+      }
       router.replace(safeNext(searchParams.get("next"), home, area));
     } catch (err) {
       setError(describe(err));
@@ -205,7 +214,7 @@ export function LoginForm({
         disabled={pending || code.length !== CODE_LENGTH}
       >
         {pending ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
-        ورود
+        {submitLabel}
       </Button>
 
       <div className="flex items-center justify-between text-sm">
