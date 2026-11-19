@@ -138,6 +138,10 @@ def process(
             _finish(db, message, MessageStatus.EXPIRED, "challenge ended before sending")
             return Result(Outcome.DONE)
         text, subject = _otp_text(str(code)), "کد ورود CRM"
+    if message.purpose is Purpose.MARKETING and _suppressed(db, message):
+        # Unsubscribed after it was queued: the last check, right before sending.
+        _finish(db, message, MessageStatus.CANCELED, "در فهرست عدم ارسال است.")
+        return Result(Outcome.DONE)
 
     message.status = MessageStatus.SENDING
     message.attempts += 1
@@ -173,6 +177,20 @@ def process(
     if message.purpose is Purpose.OTP:
         redis.delete(otp_code_key(message.id))
     return Result(Outcome.DONE)
+
+
+def _suppressed(db: Session, message: OutboundMessage) -> bool:
+    from app.modules.campaigns.models import Suppression  # campaigns builds on messaging
+
+    return (
+        db.scalar(
+            select(Suppression.id).where(
+                Suppression.channel == message.channel,
+                Suppression.address == message.recipient,
+            )
+        )
+        is not None
+    )
 
 
 def _finish(db: Session, message: OutboundMessage, status: MessageStatus, error: str) -> None:

@@ -16,6 +16,7 @@ from app.modules.audit import router as audit_router
 from app.modules.auth.router import router as auth_router
 from app.modules.auth.sender import SenderNotConfiguredError
 from app.modules.automation import router as automation
+from app.modules.campaigns import router as campaigns
 from app.modules.crm import customers, leads, organizations, reference
 from app.modules.identity import router as identity_router
 from app.modules.messaging import router as messaging
@@ -70,8 +71,11 @@ def create_app() -> FastAPI:
         messaging,
         notifications,
         automation,
+        campaigns,
     ):
         app.include_router(module.router)
+    app.include_router(campaigns.suppressions)
+    app.include_router(campaigns.public)
     app.include_router(messaging.webhooks)
 
     @app.get("/health/live", tags=["health"])
