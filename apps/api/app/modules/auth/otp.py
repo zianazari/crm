@@ -5,6 +5,9 @@
 * Verification, attempt counting and consumption run in one Lua script, so a code
   can be used once and the attempt limit cannot be raced.
 * The response to a request never reveals whether an account exists.
+* Staff and customer-portal logins share this service but not their challenges: each
+  challenge records its audience, and a code only verifies for the audience it was
+  issued to (spec section 5: portal identities are separate from staff).
 """
 
 import hashlib
@@ -12,7 +15,9 @@ import hmac
 import logging
 import secrets
 import uuid
+from collections.abc import Callable
 from dataclasses import dataclass
+from typing import Literal
 
 from redis import Redis
 from sqlalchemy import select
@@ -25,11 +30,28 @@ from app.modules.identity.models import User
 
 logger = logging.getLogger("crm.auth.otp")
 
+Audience = Literal["login", "portal"]  # "login" = staff
+Lookup = Callable[[Session, Channel, str], uuid.UUID | None]
+
+
+def _ns(audience: Audience) -> str:
+    """Redis key prefix: staff keys keep their original names, portal keys are apart."""
+    return "" if audience == "login" else f"{audience}:"
+
+
+def staff_lookup(db: Session, channel: Channel, destination: str) -> uuid.UUID | None:
+    column = User.mobile if channel is Channel.SMS else User.email
+    return db.scalar(select(User.id).where(column == destination, User.is_active.is_(True)))
+
+
 _HOUR = 3600
 
 _VERIFY_SCRIPT = """
 local key = KEYS[1]
 if redis.call('EXISTS', key) == 0 then
+  return ''
+end
+if redis.call('HGET', key, 'purpose') ~= ARGV[3] then
   return ''
 end
 local attempts = redis.call('HINCRBY', key, 'attempts', 1)
@@ -78,7 +100,16 @@ class OtpService:
 
     # -- request -------------------------------------------------------------
 
-    def request(self, db: Session, channel: Channel, raw_destination: str, ip: str) -> OtpChallenge:
+    def request(
+        self,
+        db: Session,
+        channel: Channel,
+        raw_destination: str,
+        ip: str,
+        *,
+        audience: Audience = "login",
+        lookup: Lookup = staff_lookup,
+    ) -> OtpChallenge:
         destination = (
             normalize_mobile(raw_destination)
             if channel is Channel.SMS
@@ -88,9 +119,9 @@ class OtpService:
             raise InvalidDestinationError(channel.value)
 
         # These limits apply whether or not an account exists, so they reveal nothing.
-        self._enforce_cooldown(f"otp:cooldown:{channel.value}:{destination}")
+        self._enforce_cooldown(f"otp:cooldown:{_ns(audience)}{channel.value}:{destination}")
         self._enforce_limit(
-            f"otp:rl:dest:{channel.value}:{destination}",
+            f"otp:rl:dest:{_ns(audience)}{channel.value}:{destination}",
             self.settings.otp_max_requests_per_destination_hour,
         )
         self._enforce_limit(f"otp:rl:ip:{ip}", self.settings.otp_max_requests_per_ip_hour)
@@ -101,39 +132,49 @@ class OtpService:
             resend_after=self.settings.otp_resend_seconds,
         )
 
-        column = User.mobile if channel is Channel.SMS else User.email
-        user = db.scalar(select(User).where(column == destination, User.is_active.is_(True)))
-        if user is None:
+        subject_id = lookup(db, channel, destination)
+        if subject_id is None:
             return challenge
 
         # Per-account cap across channels: switching SMS/email does not reset it.
         # Exceeding it silently skips sending so the response stays identical.
         if not self._within_limit(
-            f"otp:rl:account:{user.id}", self.settings.otp_max_requests_per_account_hour
+            f"otp:rl:account:{_ns(audience)}{subject_id}",
+            self.settings.otp_max_requests_per_account_hour,
         ):
-            logger.info("OTP account limit reached for user %s", user.id)
+            logger.info("OTP account limit reached for %s %s", audience, subject_id)
             return challenge
 
         code = f"{secrets.randbelow(100_000):05d}"
-        self._store(challenge.challenge_id, user.id, channel, destination, code)
+        self._store(challenge.challenge_id, subject_id, channel, destination, code, audience)
         try:
             self.sender.send(
                 channel,
                 destination,
                 code,
-                OtpContext(challenge.challenge_id, user.id, self.settings.otp_ttl_seconds),
+                OtpContext(
+                    challenge.challenge_id,
+                    subject_id if audience == "login" else None,
+                    self.settings.otp_ttl_seconds,
+                ),
             )
         except Exception:
             # Keep the response identical; the failure is visible in logs and monitoring.
-            logger.exception("OTP delivery failed for user %s", user.id)
+            logger.exception("OTP delivery failed for %s %s", audience, subject_id)
             self.redis.delete(_challenge_key(challenge.challenge_id))
         return challenge
 
     def _store(
-        self, challenge_id: str, user_id: uuid.UUID, channel: Channel, destination: str, code: str
+        self,
+        challenge_id: str,
+        user_id: uuid.UUID,
+        channel: Channel,
+        destination: str,
+        code: str,
+        audience: Audience,
     ) -> None:
         ttl = self.settings.otp_ttl_seconds
-        active_key = f"otp:active:{user_id}"
+        active_key = f"otp:active:{_ns(audience)}{user_id}"
         previous = self.redis.get(active_key)
         pipe = self.redis.pipeline(transaction=True)
         if previous:
@@ -145,7 +186,7 @@ class OtpService:
                 "user_id": str(user_id),
                 "channel": channel.value,
                 "destination": destination,
-                "purpose": "login",
+                "purpose": audience,
                 "code_hmac": self._code_hmac(challenge_id, code),
                 "attempts": 0,
             },
@@ -156,8 +197,11 @@ class OtpService:
 
     # -- verify --------------------------------------------------------------
 
-    def verify(self, challenge_id: str, raw_code: str, ip: str) -> uuid.UUID | None:
-        """Returns the user id when the code is right; None for every kind of failure."""
+    def verify(
+        self, challenge_id: str, raw_code: str, ip: str, *, audience: Audience = "login"
+    ) -> uuid.UUID | None:
+        """Returns the user (or portal identity) id when the code is right and was issued
+        for this audience; None for every kind of failure."""
         self._enforce_limit(f"otp:rl:verify:{ip}", self.settings.otp_max_verifications_per_ip_hour)
         code = normalize_otp_code(raw_code)
         result = self.redis.eval(
@@ -166,10 +210,11 @@ class OtpService:
             _challenge_key(challenge_id),
             self._code_hmac(challenge_id, code),
             self.settings.otp_max_attempts,
+            audience,
         )
         if not result:
             return None
-        self.redis.delete(f"otp:active:{result}")
+        self.redis.delete(f"otp:active:{_ns(audience)}{result}")
         return uuid.UUID(str(result))
 
     # -- helpers -------------------------------------------------------------

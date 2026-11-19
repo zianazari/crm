@@ -69,7 +69,7 @@ def test_deactivation_requires_a_decision_on_open_work(org: Org) -> None:
     make_deal(rep1, make_customer(rep1))
     admin = login_as(org.admin.id)
     items = admin.get(f"/users/{org.rep1.id}/open-items").json()
-    assert items == {"leads": 0, "customers": 1, "deals": 1, "activities": 0}
+    assert items == {"leads": 0, "customers": 1, "deals": 1, "activities": 0, "tickets": 0}
     assert admin.post(f"/users/{org.rep1.id}/deactivate", json={}).status_code == 409
     assert (
         admin.post(f"/users/{org.admin.id}/deactivate", json={"leave_open_items": True}).status_code

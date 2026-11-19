@@ -22,6 +22,7 @@ class NotificationKind(enum.StrEnum):
     DAILY_DIGEST = "daily_digest"
     TEAM_TASK = "team_task"  # new work in a team queue
     CAMPAIGN = "campaign"  # a campaign finished, failed or hit the budget
+    TICKET = "ticket"  # a ticket was opened, answered by the customer, or assigned
 
 
 class Notification(UUIDPrimaryKey, Base):

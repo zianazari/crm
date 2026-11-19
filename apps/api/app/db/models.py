@@ -10,7 +10,9 @@ from app.modules.crm import models as crm_models
 from app.modules.identity import models as identity_models
 from app.modules.messaging import models as messaging_models
 from app.modules.notifications import models as notifications_models
+from app.modules.portal import models as portal_models
 from app.modules.sales import models as sales_models
+from app.modules.tickets import models as tickets_models
 
 __all__ = [
     "Base",
@@ -23,5 +25,7 @@ __all__ = [
     "identity_models",
     "messaging_models",
     "notifications_models",
+    "portal_models",
     "sales_models",
+    "tickets_models",
 ]

@@ -127,11 +127,12 @@ def process(
     subject, text = message.subject, message.body
     if message.purpose is Purpose.OTP:
         code = redis.get(otp_code_key(message.id))
-        active = redis.get(f"otp:active:{message.user_id}")
+        # A newer code deletes the older challenge, and a used or expired one is gone.
+        current = bool(redis.exists(f"otp:challenge:{message.challenge_id}"))
         now = datetime.now(UTC)
         if (
             not code
-            or active != message.challenge_id
+            or not current
             or (message.expires_at is not None and now >= message.expires_at)
         ):
             # Never deliver a code that can no longer be used (spec 8.4).
