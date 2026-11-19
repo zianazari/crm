@@ -53,3 +53,14 @@ variable "backup_retention_days" {
   type    = number
   default = 30
 }
+
+variable "demo" {
+  description = "Demo site: SMS simulator and Mailpit instead of real providers (staging only)."
+  type        = bool
+  default     = true
+}
+
+variable "admin_cidrs" {
+  description = "Who may reach the admin ports (API 8000, RabbitMQ 15672/5672, Mailpit 8025, SMS simulator 8030, Postgres 5432, Redis 6379)."
+  type        = list(string)
+}

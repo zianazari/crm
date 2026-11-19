@@ -4,6 +4,15 @@ set -euo pipefail
 
 meta() { curl -sf -H "Metadata-Flavor: Google" "http://metadata.google.internal/computeMetadata/v1/instance/attributes/$1"; }
 
+# Docker's data on the persistent disk (formatted the first time only).
+DISK=/dev/disk/by-id/google-crm-data
+if ! mountpoint -q /var/lib/docker; then
+  blkid "$DISK" >/dev/null || mkfs.ext4 -q -m 0 "$DISK"
+  mkdir -p /var/lib/docker
+  grep -q crm-data /etc/fstab || echo "$DISK /var/lib/docker ext4 defaults,nofail 0 2" >> /etc/fstab
+  mount /var/lib/docker
+fi
+
 if ! command -v docker >/dev/null; then
   apt-get update -q
   apt-get install -yq ca-certificates curl
@@ -26,7 +35,12 @@ IMAGE_TAG=${CRM_IMAGE_TAG:-$(meta crm-image-tag)}
 ENV
 umask 077
 gcloud secrets versions access latest --secret=crm-env > .env
+echo >> .env  # the secret may not end with a newline
 cat deploy.env >> .env
+# The simulators' basic-auth hash for Caddy, from the admin password ($ doubled for Compose).
+ADMIN_PASSWORD=$(grep '^ADMIN_PASSWORD=' .env | cut -d= -f2-)
+HASH=$(docker run --rm caddy:2.8-alpine caddy hash-password --plaintext "$ADMIN_PASSWORD")
+echo "ADMIN_HASH=${HASH//\$/\$\$}" >> .env
 
 gcloud auth configure-docker "${REPO%%/*}" --quiet
 docker compose --env-file .env pull

@@ -9,3 +9,27 @@
 	}
 	reverse_proxy web:3000
 }
+
+# Admin ports, HTTPS with the same certificate. The firewall only opens them to
+# admin_cidrs (infra/terraform); the simulators also need the admin password.
+{$CRM_HOST}:8000 {
+	reverse_proxy api:8000
+}
+
+{$CRM_HOST}:15672 {
+	reverse_proxy rabbitmq:15672
+}
+
+{$CRM_HOST}:8025 {
+	basic_auth {
+		{$ADMIN_USER} {$ADMIN_HASH}
+	}
+	reverse_proxy mailpit:8025
+}
+
+{$CRM_HOST}:8030 {
+	basic_auth {
+		{$ADMIN_USER} {$ADMIN_HASH}
+	}
+	reverse_proxy sms-sink:8030
+}
