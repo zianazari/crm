@@ -27,6 +27,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ApiError } from "@/lib/api";
 import { formatCode, formatDateTime } from "@/lib/format";
 import { portalFetch, type PortalTicketDetail, type PortalTicketPage } from "@/lib/portal";
+import { PortalBookings } from "./portal-bookings";
 import { usePortalMe } from "./portal-header";
 
 export function PortalHome() {
@@ -43,10 +44,12 @@ export function PortalHome() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="space-y-1">
           <h1 className="text-2xl font-bold tracking-tight">{me ? `${me.customer_name}، خوش آمدید` : "درخواست‌های من"}</h1>
-          <p className="text-sm text-muted-foreground">درخواست پشتیبانی ثبت کنید و پاسخ‌ها را همین‌جا ببینید.</p>
+          <p className="text-sm text-muted-foreground">درخواست پشتیبانی ثبت کنید، پاسخ‌ها و جلسه‌های رزروشده خود را همین‌جا ببینید.</p>
         </div>
         <NewTicketDialog />
       </div>
+      <PortalBookings />
+      <h2 className="text-lg font-semibold">درخواست‌های پشتیبانی</h2>
       {isPending || !data ? (
         <Skeleton className="h-40" />
       ) : data.items.length === 0 ? (

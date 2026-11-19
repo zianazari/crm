@@ -15,6 +15,6 @@ export function proxy(request: NextRequest) {
 
 export const config = {
   // Everything except the login page, the customer portal (its own login and guard), the
-  // public unsubscribe page (/u/<token>), the API rewrite and static assets.
-  matcher: ["/((?!login|portal|u/|api|_next/static|_next/image|favicon.ico|.*\\.(?:png|svg|ico|woff2?)$).*)"],
+  // public unsubscribe page (/u/<token>), the booking page (/book/<token>), the API rewrite and static assets.
+  matcher: ["/((?!login|portal|book/|u/|api|_next/static|_next/image|favicon.ico|.*\\.(?:png|svg|ico|woff2?)$).*)"],
 };
