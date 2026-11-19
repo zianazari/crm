@@ -22,8 +22,12 @@ from app.modules.crm import customers, leads, organizations, reference
 from app.modules.identity import router as identity_router
 from app.modules.messaging import router as messaging
 from app.modules.notifications import router as notifications
+from app.modules.portal import access as portal_access
+from app.modules.portal import auth as portal_auth
 from app.modules.reports import router as reports
 from app.modules.sales import deals, stages
+from app.modules.tickets import portal as portal_tickets
+from app.modules.tickets import router as tickets
 
 
 def create_app() -> FastAPI:
@@ -78,6 +82,13 @@ def create_app() -> FastAPI:
     app.include_router(campaigns.suppressions)
     app.include_router(direct.templates)
     app.include_router(direct.router)
+    for portal_router in (
+        portal_auth.router,
+        portal_access.router,
+        tickets.router,
+        portal_tickets.router,
+    ):
+        app.include_router(portal_router)
     app.include_router(campaigns.public)
     app.include_router(messaging.webhooks)
 

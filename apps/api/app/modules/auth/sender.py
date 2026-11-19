@@ -25,7 +25,7 @@ class OtpContext:
     """Lets the worker check the challenge is still current before it sends."""
 
     challenge_id: str
-    user_id: uuid.UUID
+    user_id: uuid.UUID | None  # staff only; portal identities are not users
     ttl_seconds: int
 
 

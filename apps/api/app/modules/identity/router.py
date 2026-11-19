@@ -36,6 +36,7 @@ from app.modules.identity.models import Role, Team, TeamKind, User
 from app.modules.notifications.models import NotificationKind
 from app.modules.notifications.service import fa, notify
 from app.modules.sales.models import Deal, DealStatus
+from app.modules.tickets.models import Ticket, TicketStatus
 
 router = APIRouter(tags=["administration"], dependencies=[Depends(require_csrf)])
 
@@ -88,10 +89,11 @@ class OpenItems(BaseModel):
     customers: int
     deals: int
     activities: int
+    tickets: int = 0
 
     @property
     def total(self) -> int:
-        return self.leads + self.customers + self.deals + self.activities
+        return self.leads + self.customers + self.deals + self.activities + self.tickets
 
 
 class DeactivateIn(BaseModel):
@@ -190,6 +192,11 @@ def _open_items(db: DbDep, user_id: uuid.UUID) -> OpenItems:
         activities=count(
             select(func.count(Activity.id)).where(
                 Activity.owner_id == user_id, Activity.status.in_(OPEN_STATUSES)
+            )
+        ),
+        tickets=count(
+            select(func.count(Ticket.id)).where(
+                Ticket.assignee_id == user_id, Ticket.status != TicketStatus.CLOSED
             )
         ),
     )
@@ -412,6 +419,11 @@ def _transfer(db: DbDep, scope: AccessScope, source: User, target: User) -> None
                 actor_id=scope.user.id,
             )
         )
+    for ticket in db.scalars(
+        select(Ticket).where(Ticket.assignee_id == source.id, Ticket.status != TicketStatus.CLOSED)
+    ).unique():
+        ticket.assignee_id, ticket.assignee = target.id, target
+        ticket.version += 1
 
 
 @router.post("/users/{user_id}/reactivate")
