@@ -9,7 +9,7 @@ export const metadata: Metadata = { title: { default: "پنل مشتری", templ
 export default function PortalLayout({ children }: LayoutProps<"/portal">) {
   return (
     <Providers>
-      <div className="min-h-svh">
+      <div data-ui="app" className="min-h-svh">
         <PortalHeader />
         <main className="mx-auto w-full max-w-3xl space-y-6 p-4 md:p-6">{children}</main>
       </div>

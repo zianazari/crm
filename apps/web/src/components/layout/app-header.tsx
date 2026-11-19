@@ -2,11 +2,12 @@ import { Search } from "lucide-react";
 
 import { MobileNav } from "@/components/layout/mobile-nav";
 import { NotificationBell } from "@/components/layout/notification-bell";
+import { ThemeMenu } from "@/components/layout/theme-toggle";
 import { UserMenu } from "@/components/layout/user-menu";
 
 export function AppHeader() {
   return (
-    <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background/90 px-4 backdrop-blur md:px-6">
+    <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-background/90 px-4 backdrop-blur md:px-6">
       <MobileNav />
       <form role="search" className="relative w-full max-w-md">
         <Search
@@ -25,6 +26,7 @@ export function AppHeader() {
         />
       </form>
       <div className="ms-auto flex items-center gap-2">
+        <ThemeMenu />
         <NotificationBell />
         <UserMenu />
       </div>

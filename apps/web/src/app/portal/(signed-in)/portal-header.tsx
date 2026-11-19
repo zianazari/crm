@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { LogOut } from "lucide-react";
 
-import { ThemeToggle } from "@/components/layout/theme-toggle";
+import { ThemeMenu } from "@/components/layout/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { portalFetch, type PortalMe } from "@/lib/portal";
 
@@ -25,7 +25,7 @@ export function PortalHeader() {
   }
   return (
     <header className="sticky top-0 z-10 border-b bg-background/90 backdrop-blur">
-      <div className="mx-auto flex h-16 w-full max-w-3xl items-center gap-3 px-4 md:px-6">
+      <div className="mx-auto flex h-14 w-full max-w-3xl items-center gap-3 px-4 md:px-6">
         <Link href="/portal" className="flex items-center gap-2">
           <span aria-hidden className="grid size-8 place-items-center rounded-lg bg-primary text-primary-foreground">
             <svg viewBox="0 0 24 24" className="size-5" fill="currentColor">
@@ -36,7 +36,7 @@ export function PortalHeader() {
           <span className="font-bold">پنل مشتری</span>
         </Link>
         <span className="ms-auto truncate text-sm text-muted-foreground">{me?.customer_name}</span>
-        <ThemeToggle />
+        <ThemeMenu />
         <Button variant="ghost" size="sm" onClick={() => void logout()}>
           <LogOut aria-hidden />
           خروج

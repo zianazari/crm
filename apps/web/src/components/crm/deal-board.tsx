@@ -81,7 +81,7 @@ export function DealBoard({ board, stages }: { board: Board; stages: Stage[] }) 
           >
             <header className="space-y-1 border-b px-3 py-2.5">
               <div className="flex items-center justify-between gap-2">
-                <h2 className="flex items-center gap-2 font-semibold">
+                <h2 className="flex items-center gap-2 text-lg font-bold">
                   <span className={cn("size-2 rounded-full", STAGE_DOTS[index % STAGE_DOTS.length])} aria-hidden />
                   {column.stage.name}
                 </h2>
@@ -118,7 +118,7 @@ export function DealBoard({ board, stages }: { board: Board; stages: Stage[] }) 
           {...dropProps("outcome", (deal) => setClosing({ deal, mode: "won" }))}
         >
           <header className="space-y-1 border-b px-3 py-2.5">
-            <h2 className="font-semibold">نتیجه نهایی</h2>
+            <h2 className="text-lg font-bold">نتیجه نهایی</h2>
             <p className="flex flex-wrap gap-x-3 text-xs text-muted-foreground">
               <span className="flex items-center gap-1">
                 <CircleCheck className="size-3.5 text-primary" aria-hidden />
@@ -193,7 +193,7 @@ function DealCard({
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 space-y-0.5">
-          <p className="flex items-center gap-1.5 font-semibold">
+          <p className="flex items-center gap-1.5 text-base font-bold">
             <Building2 className="size-4 shrink-0 text-muted-foreground" aria-hidden />
             <span className="truncate">{deal.customer.full_name}</span>
             {full ? null : <Lock className="size-3.5 shrink-0 text-muted-foreground" aria-label="فقط وضعیت فعلی" />}
@@ -235,7 +235,7 @@ function DealCard({
       </div>
 
       {full ? (
-        <p className="font-semibold">
+        <p className="text-base font-bold">
           {full.status === "won" && full.contract_amount !== null
             ? formatToman(full.contract_amount)
             : full.amount !== null
