@@ -37,15 +37,99 @@ Dark theme:
 - Profile photos, light, dark or system theme.
 - **Roles**: admin, sales manager and sales rep. Reps see only the current status of other people's records.
 
-## Stack
+## Architecture
+
+```mermaid
+flowchart LR
+    browser([Staff / customer browser]) -->|HTTPS| caddy[Caddy]
+    caddy --> web["web<br/>Next.js"]
+    web -->|"/api/* rewrite"| api["api<br/>FastAPI"]
+    api --> pg[(PostgreSQL)]
+    api --> redis[(Redis)]
+    worker["worker<br/>Python"] --> pg
+    worker --> redis
+    worker <-->|"messages.otp / messages.send"| mq[(RabbitMQ)]
+    worker -->|SMS| sms[SMS provider]
+    worker -->|SMTP| mail[Email provider]
+    sms -.->|"delivery report<br/>POST /webhooks/sms"| api
+```
+
+The system is three processes built from two images, plus three stateful services:
+
+| Component | Role |
+| --- | --- |
+| **web** (`apps/web`) | Next.js 16 app router, shadcn/ui on Base UI, Tailwind CSS v4, TanStack Query. Renders the staff app, the customer portal (`/portal`) and booking pages (`/book/...`). It rewrites `/api/*` to the API, so the browser only talks to one origin and auth cookies stay first-party. |
+| **api** (`apps/api`) | FastAPI with SQLAlchemy 2 and Alembic. Stateless; any number can run. Handles every request and writes all side effects (messages, automation events) into Postgres in the same transaction as the change. |
+| **worker** (`app/worker.py`) | One process, several loops: the outbox publisher, the RabbitMQ consumer that actually sends SMS/email, the reminder and daily-digest scheduler (30 s), the automation engine (3 s) and the campaign dispatcher (5 s). Safe to run more than one. |
+| **PostgreSQL** | The source of truth: every record, the outbox, automation events and the audit log. Booking overlaps are prevented by a `btree_gist` exclusion constraint. |
+| **Redis** | Short-lived state: one-time code challenges, rate limits and cooldowns, per-user daily send caps, and verified-visitor markers for the portal and booking links. |
+| **RabbitMQ** | Delivery queues for outgoing messages, with per-message retry backoff and a dead-letter queue. |
+
+### Backend modules
+
+`apps/api/app/modules` has one package per domain. Each owns its models, schemas, service functions and router.
+
+| Module | Responsibility |
+| --- | --- |
+| `auth` | One-time code request/verify, JWT access and refresh cookies, CSRF, session rotation |
+| `identity` | Users, roles, teams, profile photos |
+| `crm` | Leads, customers, organizations, tags, duplicate detection, lead conversion |
+| `sales` | Pipelines and stages, deals, outcomes, payments |
+| `activities` | Calls, meetings and tasks, the calendar, notes and the record timeline |
+| `booking` | Availability, meeting types, time off, public booking links |
+| `messaging` | Templates, the outbox, RabbitMQ topology, SMS/email providers, delivery webhooks |
+| `campaigns` | Audiences, scheduling, throttled sending, suppression and unsubscribe |
+| `automation` | Visual rule graphs, versions, event matching and run history |
+| `notifications` | In-app notifications, reminders, daily digest |
+| `tickets`, `portal` | Customer support tickets and the customer portal |
+| `reports` | Overview and report aggregates, scoped to what the viewer may see |
+| `audit` | Append-only audit log of sensitive actions |
+
+Shared code lives in `app/core` (settings, Redis client, Jalali dates, phone and email normalization) and `app/db` (engine, session, base models).
+
+### Data flows
+
+**Sign-in with a one-time code**
+
+```mermaid
+sequenceDiagram
+    participant B as Browser
+    participant A as api
+    participant R as Redis
+    participant P as Postgres
+    participant W as worker
+    B->>A: POST /auth/otp/request (mobile or email)
+    A->>R: check rate limit, store hashed code
+    A->>P: insert message + outbox row (one transaction)
+    W->>P: read outbox
+    W->>W: publish to messages.otp, consume, send via provider
+    B->>A: POST /auth/otp/verify (code)
+    A->>R: compare hash, count attempts
+    A->>P: create session, audit "auth.login"
+    A-->>B: httpOnly access + refresh cookies
+```
+
+The response to a code request is the same whether or not the account exists. Wrong codes, requests and resends are limited per destination and per IP.
+
+**Outgoing SMS and email (transactional outbox).** No request ever calls a provider. The API writes the message and an outbox row in the same transaction as the business change, so a message exists if and only if the change committed. The worker's publisher moves outbox rows to RabbitMQ; the consumer sends through the provider and records the result. Temporary failures go to a `.retry` queue whose per-message TTL dead-letters them back after a backoff; permanent failures land in `messages.dead`. Each send is idempotent, so redelivery never sends twice. Providers report delivery later to `/webhooks/sms`.
+
+**Automation.** Domain code calls `automation.events.emit(...)` inside its own transaction (for example "deal entered stage"). The worker's automation loop matches new events to active rule versions, evaluates conditions and runs actions: create an activity, assign, notify, add to the finance queue, or send a message through the outbox. Delays park a run and resume it later. A depth limit and dedupe keys stop rules from triggering each other forever.
+
+**Campaigns.** The campaign loop starts scheduled campaigns and queues recipients in batches, only inside allowed sending hours and under the hourly cap. Suppressed and unsubscribed contacts are skipped, and each recipient's result is tracked.
+
+**Booking.** A staff member sends a booking link from a customer record. The public page lists free slots computed from working hours, meeting types, time off and existing activities. The visitor confirms with a one-time code (audience `booking`); the API then creates the meeting under a per-calendar advisory lock, and the database's exclusion constraint guarantees no double booking even across API instances.
+
+**Reminders and digest.** The scheduler loop turns due activities into in-app notifications and builds each user's daily digest; the web app polls for new notifications.
+
+## Repository layout
 
 | Path | Contents |
 | --- | --- |
-| `apps/web` | Next.js 16, shadcn/ui (Base UI), Tailwind CSS v4, TanStack Query, Vazirmatn font |
-| `apps/api` | FastAPI, SQLAlchemy 2, Alembic, PostgreSQL, Redis, RabbitMQ |
-| `apps/api/app/modules` | One package per domain: `auth`, `identity`, `crm`, `sales`, `activities`, `booking`, `campaigns`, `tickets`, `automation`, `reports`, … |
+| `apps/web` | Next.js front end |
+| `apps/api` | FastAPI back end, Alembic migrations, CLI (`create-user`, `seed-demo`) and tests |
 | `tools/sms-sink` | SMS provider simulator for development and tests |
-| `deploy/`, `infra/terraform` | Production images, Docker Compose and Terraform for a single VM on Google Cloud |
+| `deploy/` | Production Docker Compose, Caddyfile, Cloud Build config and `deploy.sh` |
+| `infra/terraform` | Google Cloud infrastructure |
 | `docs/` | Product spec (Persian) and screenshots |
 
 ## Running locally
