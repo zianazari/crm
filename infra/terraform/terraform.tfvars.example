@@ -1,0 +1,10 @@
+project_id  = "your-project-id"
+environment = "staging"
+# domain    = "crm.example.com"   # empty: <ip>.sslip.io
+# app_env = {
+#   CRM_SMTP_HOST     = "smtp.example.com"
+#   CRM_SMTP_PORT     = "587"
+#   CRM_SMTP_USERNAME = "…"
+#   CRM_SMTP_PASSWORD = "…"
+#   CRM_SMTP_STARTTLS = "true"
+# }

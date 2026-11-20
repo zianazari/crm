@@ -1,0 +1,108 @@
+# Runs on the VM created by infra/terraform. /opt/crm/.env comes from Secret Manager;
+# IMAGE_REPO and IMAGE_TAG pick the images built by deploy/cloudbuild.yaml.
+name: crm
+
+x-app: &app
+  image: ${IMAGE_REPO}/api:${IMAGE_TAG}
+  env_file: .env
+  restart: unless-stopped
+  depends_on:
+    postgres: { condition: service_healthy }
+    redis: { condition: service_healthy }
+    rabbitmq: { condition: service_healthy }
+
+services:
+  caddy:
+    image: caddy:2.8-alpine
+    restart: unless-stopped
+    # 443 the CRM; the rest are the admin ports (the firewall limits them to admin_cidrs):
+    # 8000 API, 15672 RabbitMQ, 8025 Mailpit, 8030 SMS simulator.
+    ports: ["80:80", "443:443", "8000:8000", "15672:15672", "8025:8025", "8030:8030"]
+    environment:
+      CRM_HOST: ${CRM_HOST}
+      ADMIN_USER: admin
+      ADMIN_HASH: ${ADMIN_HASH}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+    depends_on: [web]
+
+  web:
+    image: ${IMAGE_REPO}/web:${IMAGE_TAG}
+    restart: unless-stopped
+    depends_on: [api]
+
+  migrate:
+    <<: *app
+    restart: "no"
+    command: ["alembic", "upgrade", "head"]
+
+  api:
+    <<: *app
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+
+  worker:
+    <<: *app
+    command: ["python", "-m", "app.worker"]
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    ports: ["5432:5432"]
+    environment:
+      POSTGRES_USER: crm
+      POSTGRES_DB: crm
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes: [postgres-data:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U crm -d crm"]
+      interval: 5s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD}"]
+    ports: ["6379:6379"]
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    volumes: [redis-data:/data]
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PASSWORD\" --no-auth-warning ping"]
+      interval: 5s
+      retries: 20
+
+  rabbitmq:
+    image: rabbitmq:4-management-alpine
+    restart: unless-stopped
+    ports: ["5672:5672"]
+    environment:
+      RABBITMQ_DEFAULT_USER: crm
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+    volumes: [rabbitmq-data:/var/lib/rabbitmq]
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      retries: 20
+
+  # Demo only (COMPOSE_PROFILES=demo): stand-ins until a real SMS/email provider is chosen.
+  mailpit:
+    image: axllent/mailpit:v1.21
+    restart: unless-stopped
+    profiles: [demo]
+
+  sms-sink:
+    image: ${IMAGE_REPO}/sms-sink:${IMAGE_TAG}
+    restart: unless-stopped
+    profiles: [demo]
+    environment:
+      SMS_SINK_WEBHOOK_SECRET: ${CRM_SMS_WEBHOOK_SECRET}
+
+volumes:
+  caddy-data:
+  postgres-data:
+  redis-data:
+  rabbitmq-data:
