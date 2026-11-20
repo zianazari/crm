@@ -110,3 +110,16 @@ cd apps/api && uv run ruff format --check . && uv run ruff check . && uv run myp
 ## نکته امنیتی
 
 این مخزن عمومی است. هیچ اعتبارنامه، کلید سرویس یا داده واقعی مشتری وارد مخزن نمی‌شود؛ اسرار فقط در GitHub Secrets و تنظیمات میزبان نگهداری می‌شوند. در محیط آزمایشی و تولید، `CRM_JWT_SECRET` و `CRM_OTP_SECRET` باید تنظیم شوند؛ در غیر این صورت API اجرا نمی‌شود.
+
+## استقرار روی GCP (Terraform، فنلاند)
+
+یک VM در `europe-north1` همه سرویس‌ها را با Docker Compose اجرا می‌کند (Caddy با HTTPS خودکار، وب، API، Worker، Postgres، Redis، RabbitMQ). رمزها تصادفی ساخته و در Secret Manager نگه داشته می‌شوند، از پایگاه داده هر شب در Cloud Storage پشتیبان گرفته می‌شود و SSH فقط از طریق IAP باز است.
+
+```bash
+cd infra/terraform
+cp terraform.tfvars.example terraform.tfvars   # project_id و تنظیمات ارسال کد
+terraform init && terraform apply              # زیرساخت
+cd ../.. && deploy/deploy.sh                   # ساخت ایمیج‌ها با Cloud Build و استقرار
+```
+
+بدون دامنه، نشانی `https://<ip>.sslip.io` است. فایل state ترافورم رمزها را در خود دارد و نباید در مخزن قرار بگیرد.

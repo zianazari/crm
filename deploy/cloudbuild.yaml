@@ -1,0 +1,12 @@
+# gcloud builds submit --config deploy/cloudbuild.yaml --substitutions _REPO=…,_TAG=… .
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args: ["build", "-t", "${_REPO}/api:${_TAG}", "apps/api"]
+  - name: gcr.io/cloud-builders/docker
+    args: ["build", "-t", "${_REPO}/web:${_TAG}", "apps/web"]
+  - name: gcr.io/cloud-builders/docker
+    args: ["build", "-t", "${_REPO}/sms-sink:${_TAG}", "tools/sms-sink"]
+images: ["${_REPO}/api:${_TAG}", "${_REPO}/web:${_TAG}", "${_REPO}/sms-sink:${_TAG}"]
+options:
+  machineType: E2_HIGHCPU_8
+timeout: 1800s

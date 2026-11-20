@@ -20,3 +20,11 @@ __pycache__/
 
 # Node
 node_modules/
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+terraform.tfvars
+tfplan
+*.tfplan

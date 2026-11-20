@@ -56,6 +56,9 @@ class Settings(BaseSettings):
     messaging_mode: Literal["console", "queue"] = "console"
     sms_provider: Literal["sink"] = "sink"  # real providers are added when chosen (spec 13.8)
     sms_sink_url: str = "http://localhost:8030"
+    # A demo staging site may use the SMS simulator and Mailpit until a real provider is
+    # chosen (spec 13.8). Never honoured in production.
+    demo_simulators: bool = False
     sms_webhook_secret: SecretStr = SecretStr("dev-only-sms-webhook-secret")
     # Where the SMS provider sends delivery reports (reachable from the provider).
     sms_callback_url: str | None = "http://host.docker.internal:8000/webhooks/sms"
@@ -84,8 +87,14 @@ class Settings(BaseSettings):
                 raise ValueError("CRM_JWT_SECRET must be set outside development")
             if self.otp_secret.get_secret_value() == _DEV_OTP_SECRET:
                 raise ValueError("CRM_OTP_SECRET must be set outside development")
-        if self.environment in {"staging", "production"} and self.sms_provider == "sink":
-            raise ValueError("The sms-sink simulator cannot be used outside development and test")
+        if self.sms_provider == "sink" and (
+            self.environment == "production"
+            or (self.environment == "staging" and not self.demo_simulators)
+        ):
+            raise ValueError(
+                "The sms-sink simulator only runs in development, test, or a demo staging "
+                "environment (CRM_DEMO_SIMULATORS=true)"
+            )
         for secret in (self.jwt_secret, self.otp_secret):
             if len(secret.get_secret_value()) < 32:
                 raise ValueError("JWT and OTP secrets must be at least 32 characters")
