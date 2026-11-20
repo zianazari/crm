@@ -1,50 +1,59 @@
 # CRM
 
-سامانه فارسی و راست‌به‌چپ مدیریت مشتریان، فروش‌ها و فعالیت‌ها.
+A Persian, right-to-left CRM for managing leads, customers, deals and activities, with a Jalali calendar throughout.
 
-- سند نیازمندی‌ها: [docs/crm-product-spec.fa.md](docs/crm-product-spec.fa.md)
-  - تصمیم‌های قطعی محصول: بخش ۰
-  - قواعدی که هنگام پیاده‌سازی انتخاب شده‌اند: بخش ۰٫۱
-  - وضعیت پیاده‌سازی و کارهای باقی‌مانده: بخش ۱۷
-- استخراج تصاویر مرجع: [docs/crm-image-observations.fa.md](docs/crm-image-observations.fa.md)
-- دامنه انتشار اول: هسته فروش
+[فارسی](README.fa.md) · [Product spec (Persian)](docs/crm-product-spec.fa.md)
 
-## امکانات فعلی
+![Overview](docs/screenshots/overview.png)
 
-- ورود با کد یک‌بارمصرف پنج‌رقمی (پیامک یا ایمیل) و نشست JWT
-- مشتریان احتمالی، مشتریان و سازمان‌ها؛ تشخیص تکرار و تبدیل سرنخ به مشتری
-- فروش‌ها، تابلوی فروش با کشیدن و رهاکردن، نتیجه نهایی، پرداخت و مانده دریافت‌نشده
-- فعالیت‌ها، تقویم روز/هفته/ماه، یادداشت و سابقه پیگیری هر پرونده
-- نمای کلی و گزارش‌ها
-- تنظیمات: کاربران، تیم‌ها، مراحل فروش، منابع جذب، پیام‌های ارسالی و سوابق ممیزی
-- اعلان‌های داخل سامانه: یادآوری فعالیت، سپردن کار و پرونده، خلاصه روزانه
-- کمپین پیامک و ایمیل: مخاطبان انتخابی یا فیلترشده، پیش‌نمایش تعداد و هزینه، ارسال آزمایشی، زمان‌بندی، ارسال تدریجی در ساعت و سقف مجاز، نتیجه هر گیرنده، فهرست عدم ارسال و پیوند لغو در هر پیام
-- پنل مشتری (`/portal`) با ورود کد یک‌بارمصرف: ثبت و پیگیری درخواست‌های پشتیبانی؛ «تیکت‌ها» در پنل کارکنان با پاسخ عمومی، یادداشت داخلی، وضعیت و واگذاری
-- رزرو جلسه توسط مشتری: ساعت کاری، نوع جلسه و مرخصی در «زمان‌های رزرو»؛ ارسال لینک زمان‌های آزاد از پرونده مشتری؛ صفحه انتخاب زمان (`/book/...`) با تأیید کد یک‌بارمصرف؛ جابه‌جایی و لغو از همان لینک یا «جلسه‌های من» در پنل مشتری
-- ارسال تکی پیامک یا ایمیل با قالب تأییدشده از داخل پرونده، با سقف روزانه هر نفر و ثبت در سابقه پرونده
-- تیم مالی با صف کار: کار از اتوماسیون به صف می‌رود، یکی از اعضا برمی‌دارد یا مدیر واگذار می‌کند؛ عضو مالی فقط جزئیات لازم فروش را می‌بیند
-- اتوماسیون با سازنده بصری (کشیدن و رهاکردن یا صفحه‌کلید)، شش قالب آماده، اجرای آزمایشی، نسخه‌بندی و سابقه اجرا؛ پیامک و ایمیل خودکار فقط با اجازه مخاطب
-- تصویر پروفایل هر کاربر (از منوی کاربر) کنار نامش در تابلو، پرونده‌ها و سابقه پیگیری
-- ظاهر روشن، تیره یا مطابق دستگاه (از منوی کاربر؛ در پنل مشتری با دکمه کنار خروج)
-- دسترسی در سه سطح ادمین، مدیر فروش و کارشناس؛ کارشناس از پرونده‌های دیگران فقط وضعیت فعلی را می‌بیند
+All names, companies and numbers in the screenshots are fictional demo data (`seed-demo`).
 
-## ساختار
+## Screenshots
 
-| مسیر | توضیح |
+| Sales board | Deal |
 | --- | --- |
-| `apps/web` | Next.js، shadcn/ui، Tailwind CSS، فونت وزیرمتن، تاریخ شمسی |
-| `apps/api` | FastAPI، SQLAlchemy، Alembic |
-| `apps/api/app/modules` | `auth`، `identity` (کاربران و تیم‌ها)، `audit`، `crm` (مشتری و سرنخ)، `sales` (فروش و پرداخت)، `activities`، `reports` |
-| `docker-compose.yml` | PostgreSQL، Redis، RabbitMQ و سرویس‌های آزمایشی Mailpit و sms-sink برای توسعه محلی |
-| `tools/sms-sink` | شبیه‌ساز سرویس‌دهنده پیامک برای توسعه و آزمون؛ در تولید استفاده نمی‌شود |
-| `docs/` | سند نیازمندی‌ها؛ تصاویر طراحی و مرجع فقط محلی نگهداری می‌شوند و وارد Git نمی‌شوند |
+| ![Sales board](docs/screenshots/board.png) | ![Deal](docs/screenshots/deal.png) |
+| **Customers** | **Reports** |
+| ![Customers](docs/screenshots/customers.png) | ![Reports](docs/screenshots/reports.png) |
 
-## اجرای محلی
+Dark theme:
 
-پیش‌نیازها: Docker، Node.js 24 با pnpm و [uv](https://docs.astral.sh/uv/).
+![Overview in dark theme](docs/screenshots/overview-dark.png)
+
+## Features
+
+- **Sign-in** with a 5-digit one-time code by SMS or email; JWT sessions. There is no public sign-up.
+- **Leads, customers and organizations**, with duplicate detection and lead-to-customer conversion.
+- **Deals**: a drag-and-drop pipeline board, final outcome, payments and outstanding balance.
+- **Activities**: day, week and month calendar, notes and a follow-up timeline on every record.
+- **Overview and reports**: sales, receipts, pipeline by stage, source and team performance, each with a table view.
+- **Campaigns** by SMS and email: chosen or filtered audiences, count and cost preview, test send, scheduling, throttled delivery within allowed hours, per-recipient results, suppression list and an unsubscribe link in every message.
+- **Customer portal** (`/portal`): customers open and follow support tickets. Staff answer them in **Tickets** with public replies, internal notes, status and assignment.
+- **Booking**: working hours, meeting types and time off per staff member; a link with free slots sent from the customer record; a booking page (`/book/...`) confirmed by one-time code; reschedule or cancel from the link or the portal.
+- **Automation** with a visual builder, six templates, dry run, versioning and run history. Automatic SMS and email go only to contacts who have given consent.
+- **Finance team queue**: automations add work to a queue; a member takes it or a manager assigns it.
+- **In-app notifications**: activity reminders, assignments and a daily digest.
+- **Settings**: users, teams, pipeline stages, lead sources, sent messages and the audit log.
+- Profile photos, light, dark or system theme.
+- **Roles**: admin, sales manager and sales rep. Reps see only the current status of other people's records.
+
+## Stack
+
+| Path | Contents |
+| --- | --- |
+| `apps/web` | Next.js 16, shadcn/ui (Base UI), Tailwind CSS v4, TanStack Query, Vazirmatn font |
+| `apps/api` | FastAPI, SQLAlchemy 2, Alembic, PostgreSQL, Redis, RabbitMQ |
+| `apps/api/app/modules` | One package per domain: `auth`, `identity`, `crm`, `sales`, `activities`, `booking`, `campaigns`, `tickets`, `automation`, `reports`, … |
+| `tools/sms-sink` | SMS provider simulator for development and tests |
+| `deploy/`, `infra/terraform` | Production images, Docker Compose and Terraform for a single VM on Google Cloud |
+| `docs/` | Product spec (Persian) and screenshots |
+
+## Running locally
+
+Requirements: Docker, Node.js 24 with pnpm, and [uv](https://docs.astral.sh/uv/).
 
 ```bash
-# سرویس‌های محلی (Postgres روی پورت 5432)
+# Postgres, Redis, RabbitMQ, Mailpit and the SMS simulator
 docker compose up -d --wait
 
 # API: http://localhost:8000/docs
@@ -52,74 +61,50 @@ cd apps/api
 cp .env.example .env
 uv sync
 uv run alembic upgrade head
-uv run python -m app.cli create-user --name "نام شما" --mobile 09xxxxxxxxx --role admin
+uv run python -m app.cli create-user --name "Your name" --mobile 09xxxxxxxxx --role admin
 uv run uvicorn app.main:app --reload
-# در ترمینال دیگر: ارسال پیامک و ایمیل از صف، یادآوری‌ها و خلاصه روزانه
+# in another terminal: SMS/email delivery, reminders and the daily digest
 uv run python -m app.worker
 
-# وب: http://localhost:3000
+# Web: http://localhost:3000
 cd apps/web
 pnpm install
 pnpm dev
 ```
 
-ثبت‌نام عمومی وجود ندارد. اولین ادمین با دستور `create-user` ساخته می‌شود (نقش‌ها: `admin`، `sales_manager`، `sales_rep`)؛ بقیه کاربران و تیم‌ها از صفحه «تنظیمات» مدیریت می‌شوند.
+Roles for `create-user` are `admin`, `sales_manager` and `sales_rep`. Other users and teams are managed under **Settings**.
 
-داده نمایشی مطابق تصاویر طراحی (شرکت‌ها، فروش‌ها، روند شش‌ماهه، کارهای امروز، کارشناسان با تصویر) فقط در محیط توسعه و آزمایشی:
-
-```bash
-uv run python -m app.cli seed-demo          # یک بار
-uv run python -m app.cli seed-demo --reset  # پاک‌کردن داده کسب‌وکار (کاربران و تنظیمات می‌مانند) و ساخت دوباره
-```
-
-همه نام‌ها و شماره‌ها ساختگی‌اند. کارشناسان نمایشی با شماره‌های ۰۹۱۲۰۰۰۰۰۰۱، ۰۹۱۲۰۰۰۰۰۰۲ و ۰۹۱۲۰۰۰۰۰۱۱ تا ۰۹۱۲۰۰۰۰۰۱۶ وارد می‌شوند.
-
-### پیامک و ایمیل در محیط توسعه
-
-هیچ پیامک یا ایمیلی واقعاً ارسال نمی‌شود. با `CRM_MESSAGING_MODE=queue` پیام‌ها از Outbox و RabbitMQ به Worker می‌رسند و به سرویس‌های آزمایشی تحویل داده می‌شوند:
-
-- پیامک: صندوق آزمایشی http://localhost:8030 (sms-sink)
-- ایمیل: Mailpit در http://localhost:8025
-- وضعیت هر پیام: تنظیمات ← پیام‌های ارسالی
-
-برای آزمودن خطاها، شماره‌هایی با این پایان رفتار خاص دارند: `9404` گزارش تحویل ناموفق، `9503` قطعی موقت سرویس (تلاش مجدد و سپس ناموفق)، `9408` بی‌پاسخ ماندن سرویس (وضعیت «نامشخص»، بدون ارسال دوباره).
-
-اگر Worker را اجرا نمی‌کنید، `CRM_MESSAGING_MODE=console` کد ورود را فقط در لاگ API (خط `DEV OTP`) چاپ می‌کند؛ این حالت فقط در محیط توسعه مجاز است.
-
-برای ورود در محیط توسعه، شماره یا ایمیل کاربر را در http://localhost:3000/login وارد کنید و کد را از صندوق پیامک، Mailpit یا لاگ بردارید. اگر در آزمون‌های مکرر به سقف درخواست کد رسیدید، شمارنده‌های محلی را پاک کنید:
+To fill the app with demo data like the screenshots (development and staging only):
 
 ```bash
-docker compose exec redis sh -c "redis-cli --scan --pattern 'otp:*' | xargs -r redis-cli del"
+uv run python -m app.cli seed-demo          # once
+uv run python -m app.cli seed-demo --reset  # wipe business data (users and settings stay) and reseed
 ```
 
-حافظه دائمی Turbopack برای سرور توسعه در `next.config.ts` خاموش است، چون کلاس‌های تازه Tailwind را در CSS سرور توسعه منعکس نمی‌کرد. اگر با این حال استایل قدیمی دیدید، سرور توسعه را متوقف و `apps/web/.next/dev` را پاک کنید.
+### SMS and email in development
 
-اگر پورتی روی سیستم شما اشغال است، `CRM_POSTGRES_PORT`، `CRM_REDIS_PORT` یا `CRM_RABBITMQ_PORT` را هنگام اجرای Docker Compose تغییر دهید و `CRM_DATABASE_URL` را مطابق آن تنظیم کنید.
+Nothing is really sent. Messages go through the outbox and RabbitMQ to the worker, which delivers them to local inboxes:
 
-## بررسی‌ها
+- SMS: http://localhost:8030
+- Email (Mailpit): http://localhost:8025
 
-همان بررسی‌های CI:
+To sign in, enter the user's mobile or email at http://localhost:3000/login and take the code from one of these inboxes. Without the worker, set `CRM_MESSAGING_MODE=console` and the code is printed in the API log (development only).
+
+## Checks
+
+The same checks CI runs:
 
 ```bash
 cd apps/web && pnpm lint && pnpm typecheck && pnpm build
 cd apps/api && uv run ruff format --check . && uv run ruff check . && uv run mypy app tests && uv run pytest
 ```
 
-آزمون‌های API روی پایگاه داده جداگانه `crm_test` و Redis شماره ۱۵ اجرا می‌شوند و به داده محیط توسعه دست نمی‌زنند.
+API tests use a separate `crm_test` database and Redis DB 15.
 
-## نکته امنیتی
+## Deployment
 
-این مخزن عمومی است. هیچ اعتبارنامه، کلید سرویس یا داده واقعی مشتری وارد مخزن نمی‌شود؛ اسرار فقط در GitHub Secrets و تنظیمات میزبان نگهداری می‌شوند. در محیط آزمایشی و تولید، `CRM_JWT_SECRET` و `CRM_OTP_SECRET` باید تنظیم شوند؛ در غیر این صورت API اجرا نمی‌شود.
+`infra/terraform` creates one VM on Google Cloud running Docker Compose behind Caddy (HTTPS), with secrets in Secret Manager, a persistent data disk with daily snapshots and nightly database backups to Cloud Storage. `deploy/deploy.sh` builds the images with Cloud Build and rolls them out. Copy `infra/terraform/terraform.tfvars.example` to start.
 
-## استقرار روی GCP (Terraform، فنلاند)
+## Security
 
-یک VM در `europe-north1` همه سرویس‌ها را با Docker Compose اجرا می‌کند (Caddy با HTTPS خودکار، وب، API، Worker، Postgres، Redis، RabbitMQ). رمزها تصادفی ساخته و در Secret Manager نگه داشته می‌شوند، از پایگاه داده هر شب در Cloud Storage پشتیبان گرفته می‌شود و SSH فقط از طریق IAP باز است.
-
-```bash
-cd infra/terraform
-cp terraform.tfvars.example terraform.tfvars   # project_id و تنظیمات ارسال کد
-terraform init && terraform apply              # زیرساخت
-cd ../.. && deploy/deploy.sh                   # ساخت ایمیج‌ها با Cloud Build و استقرار
-```
-
-بدون دامنه، نشانی `https://<ip>.sslip.io` است. فایل state ترافورم رمزها را در خود دارد و نباید در مخزن قرار بگیرد.
+This repository is public. No credentials, keys or real customer data belong in it. `terraform.tfvars` and Terraform state are git-ignored because they contain secrets. Outside development, `CRM_JWT_SECRET` and `CRM_OTP_SECRET` must be set or the API refuses to start.
