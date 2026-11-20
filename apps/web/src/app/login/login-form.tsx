@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { ArrowRight, Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -54,7 +54,6 @@ export function LoginForm({
   onVerified?: () => void;
   submitLabel?: string;
 } = {}) {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const [destination, setDestination] = useState("");
   const [challenge, setChallenge] = useState<Challenge | null>(null);
@@ -109,7 +108,10 @@ export function LoginForm({
         onVerified();
         return;
       }
-      router.replace(safeNext(searchParams.get("next"), home, area));
+      // A full load, not router.replace: in production the target page was prefetched
+      // while signed out, and the router would replay that cached redirect to /login.
+      // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+      window.location.assign(safeNext(searchParams.get("next"), home, area));
     } catch (err) {
       setError(describe(err));
       setCode("");
